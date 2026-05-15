@@ -223,6 +223,9 @@ data class PlayerSettings(
             if (raw in STREAM_AUTOPLAY_TIMEOUT_VALUES) return raw
             return STREAM_AUTOPLAY_TIMEOUT_VALUES.minBy { kotlin.math.abs(it.toLong() - raw.toLong()) }
         }
+
+        fun isBoundedTimeout(timeoutSeconds: Int): Boolean =
+            timeoutSeconds > 0 && timeoutSeconds != STREAM_AUTOPLAY_TIMEOUT_UNLIMITED
     }
 }
 
