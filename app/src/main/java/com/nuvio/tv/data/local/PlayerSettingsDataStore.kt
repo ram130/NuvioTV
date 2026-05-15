@@ -216,6 +216,13 @@ data class PlayerSettings(
 
         val STREAM_AUTOPLAY_TIMEOUT_VALUES: List<Int> =
             listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, STREAM_AUTOPLAY_TIMEOUT_UNLIMITED)
+
+        fun applyLegacyTimeoutSentinelMigration(stored: Int?): Int {
+            val raw = stored ?: 3
+            if (raw == 11) return STREAM_AUTOPLAY_TIMEOUT_UNLIMITED
+            if (raw in STREAM_AUTOPLAY_TIMEOUT_VALUES) return raw
+            return STREAM_AUTOPLAY_TIMEOUT_VALUES.minBy { kotlin.math.abs(it.toLong() - raw.toLong()) }
+        }
     }
 }
 
