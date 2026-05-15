@@ -12,6 +12,7 @@ import com.nuvio.tv.core.torrent.TorrentSettings
 import com.nuvio.tv.core.player.StreamAutoPlayPolicy
 import com.nuvio.tv.core.player.StreamAutoPlaySelector
 import com.nuvio.tv.data.local.PlayerPreference
+import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.PlayerSettingsDataStore
 import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamLinkCacheDataStore
@@ -450,7 +451,7 @@ class StreamScreenViewModel @Inject constructor(
 
             // After timeout: if streams arrived, auto-select now; if not, wait for first result from inner job
             val timeoutMs = playerSettings.streamAutoPlayTimeoutSeconds * 1_000L
-            if (timeoutMs > 0L && playerSettings.streamAutoPlayTimeoutSeconds < 11) {
+            if (PlayerSettings.isBoundedTimeout(playerSettings.streamAutoPlayTimeoutSeconds)) {
                 delay(timeoutMs)
             }
             timeoutElapsed = true

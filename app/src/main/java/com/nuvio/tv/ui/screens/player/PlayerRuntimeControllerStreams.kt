@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.media3.common.util.UnstableApi
 import com.nuvio.tv.core.network.NetworkResult
 import com.nuvio.tv.core.player.StreamAutoPlaySelector
+import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.data.local.toTrackPreference
@@ -1131,7 +1132,7 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
             }
 
             val timeoutMs = timeoutSeconds * 1_000L
-            if (timeoutMs > 0L && timeoutSeconds < 11) {
+            if (PlayerSettings.isBoundedTimeout(timeoutSeconds)) {
                 delay(timeoutMs)
                 timeoutElapsed = true
                 if (!autoSelectTriggered && lastSuccessData != null) {
