@@ -45,6 +45,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
+import com.nuvio.tv.ui.screens.detail.requestFocusAfterFrames
 import com.nuvio.tv.ui.theme.NuvioColors
 import com.nuvio.tv.ui.util.languageCodeToName
 import java.util.Locale
@@ -89,6 +90,9 @@ internal fun AudioSelectionOverlay(
     val canIncreaseCenterMix = isCenterMixAvailable && currentCenterMixDb < CENTER_MIX_LEVEL_MAX_DB
 
     var lastFocusedAudioIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    var pendingControlFocusTarget by rememberSaveable {
+        mutableStateOf<AudioControlFocusTarget?>(null)
+    }
 
     LaunchedEffect(visible, tracks, selectedIndex) {
         if (!visible) return@LaunchedEffect
@@ -111,6 +115,35 @@ internal fun AudioSelectionOverlay(
             }
             runCatching { initialControlsFocusRequester.requestFocus() }
         }
+    }
+
+    LaunchedEffect(visible, pendingControlFocusTarget, audioAmplificationDb, isAmplificationAvailable) {
+        if (!visible) return@LaunchedEffect
+        val target = pendingControlFocusTarget ?: return@LaunchedEffect
+        val targetCanFocus = when (target) {
+            AudioControlFocusTarget.DelayMinus -> canDecreaseDelay
+            AudioControlFocusTarget.DelayPlus -> canIncreaseDelay
+            AudioControlFocusTarget.AmpMinus -> canDecreaseAmp
+            AudioControlFocusTarget.AmpPlus -> canIncreaseAmp
+            AudioControlFocusTarget.CenterMinus -> canDecreaseCenterMix
+            AudioControlFocusTarget.CenterPlus -> canIncreaseCenterMix
+            AudioControlFocusTarget.Persist -> true
+        }
+        if (!targetCanFocus) return@LaunchedEffect
+        val controlFocusRequester = when (target) {
+            AudioControlFocusTarget.DelayMinus -> delayMinusFocusRequester
+            AudioControlFocusTarget.DelayPlus -> delayPlusFocusRequester
+            AudioControlFocusTarget.AmpMinus -> ampMinusFocusRequester
+            AudioControlFocusTarget.AmpPlus -> ampPlusFocusRequester
+            AudioControlFocusTarget.CenterMinus -> centerMinusFocusRequester
+            AudioControlFocusTarget.CenterPlus -> centerPlusFocusRequester
+            AudioControlFocusTarget.Persist -> persistFocusRequester
+        }
+        delay(80)
+        controlFocusRequester.requestFocusAfterFrames(frames = 2)
+        delay(200)
+        runCatching { controlFocusRequester.requestFocus() }
+        pendingControlFocusTarget = null
     }
 
     PlayerOverlayScaffold(
@@ -175,7 +208,10 @@ internal fun AudioSelectionOverlay(
                         persistFocusRequester = persistFocusRequester,
                         leftFocusRequester = tracksFocusRequester,
                         onAudioDelayChange = onAudioDelayChange,
-                        onAmplificationChange = onAmplificationChange,
+                        onAmplificationChange = { nextDb, focusTarget ->
+                            pendingControlFocusTarget = focusTarget
+                            onAmplificationChange(nextDb)
+                        },
                         onCenterMixLevelChange = onCenterMixLevelChange,
                         onPersistAmplificationChange = onPersistAmplificationChange
                     )
@@ -343,7 +379,7 @@ private fun AudioControlsContent(
     persistFocusRequester: FocusRequester,
     leftFocusRequester: FocusRequester,
     onAudioDelayChange: (Int) -> Unit,
-    onAmplificationChange: (Int) -> Unit,
+    onAmplificationChange: (Int, AudioControlFocusTarget) -> Unit,
     onCenterMixLevelChange: (Int) -> Unit,
     onPersistAmplificationChange: (Boolean) -> Unit
 ) {
@@ -472,14 +508,24 @@ private fun AudioControlsContent(
                 downFocusRequester = firstCenterFocusRequester,
                 onDecrease = {
                     val nextDb = currentDb - 1
-                    onAmplificationChange(nextDb)
+                    val target = if (nextDb <= AUDIO_AMPLIFICATION_MIN_DB && canIncreaseAmp) {
+                        AudioControlFocusTarget.AmpPlus
+                    } else {
+                        AudioControlFocusTarget.AmpMinus
+                    }
+                    onAmplificationChange(nextDb, target)
                     if (nextDb <= AUDIO_AMPLIFICATION_MIN_DB && canIncreaseAmp) {
                         runCatching { ampPlusFocusRequester.requestFocus() }
                     }
                 },
                 onIncrease = {
                     val nextDb = currentDb + 1
-                    onAmplificationChange(nextDb)
+                    val target = if (nextDb >= AUDIO_AMPLIFICATION_MAX_DB && canDecreaseAmp) {
+                        AudioControlFocusTarget.AmpMinus
+                    } else {
+                        AudioControlFocusTarget.AmpPlus
+                    }
+                    onAmplificationChange(nextDb, target)
                     if (nextDb >= AUDIO_AMPLIFICATION_MAX_DB && canDecreaseAmp) {
                         runCatching { ampMinusFocusRequester.requestFocus() }
                     }
@@ -676,6 +722,16 @@ private fun StepCard(
             )
         }
     }
+}
+
+private enum class AudioControlFocusTarget {
+    DelayMinus,
+    DelayPlus,
+    AmpMinus,
+    AmpPlus,
+    CenterMinus,
+    CenterPlus,
+    Persist
 }
 
 private fun formatAudioDelay(delayMs: Int): String {

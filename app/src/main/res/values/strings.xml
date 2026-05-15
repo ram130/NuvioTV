@@ -1288,7 +1288,7 @@
     <string name="audio_center_mix_label">Downmix: Center Mix Level</string>
     <string name="audio_center_mix_value_db">%1$d dB</string>
     <string name="audio_center_mix_help">Center Mix Level in dB relative to metadata or default (-3 dB)</string>
-    <string name="audio_center_mix_unavailable">Center mix is only available when FFmpeg is actively downmixing because Number of channels is lower than the stream. If needed, set Audio decoder priority to Prefer app.</string>
+    <string name="audio_center_mix_unavailable">Center mix is only available when FFmpeg downmix is active.</string>
     <string name="audio_maintain_original_audio_on_downmix_title">Maintain original audio on downmix</string>
     <string name="audio_maintain_original_audio_on_downmix_subtitle">When disabled, downmix normalization can reduce overall volume.</string>
 
