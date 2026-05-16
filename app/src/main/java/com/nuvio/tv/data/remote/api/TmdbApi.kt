@@ -169,7 +169,10 @@ interface TmdbApi {
         @Query("with_original_language") withOriginalLanguage: String? = null,
         @Query("with_origin_country") withOriginCountry: String? = null,
         @Query("with_keywords") withKeywords: String? = null,
-        @Query("year") year: Int? = null
+        @Query("year") year: Int? = null,
+        @Query("watch_region") watchRegion: String? = null,
+        @Query("with_watch_providers") withWatchProviders: String? = null,
+        @Query("with_watch_monetization_types") withWatchMonetizationTypes: String? = null
     ): Response<TmdbDiscoverResponse>
 
     @GET("discover/tv")
@@ -190,7 +193,10 @@ interface TmdbApi {
         @Query("with_origin_country") withOriginCountry: String? = null,
         @Query("with_keywords") withKeywords: String? = null,
         @Query("first_air_date_year") firstAirDateYear: Int? = null,
-        @Query("with_status") withStatus: String? = null
+        @Query("with_status") withStatus: String? = null,
+        @Query("watch_region") watchRegion: String? = null,
+        @Query("with_watch_providers") withWatchProviders: String? = null,
+        @Query("with_watch_monetization_types") withWatchMonetizationTypes: String? = null
     ): Response<TmdbDiscoverResponse>
 
     @GET("list/{list_id}")
