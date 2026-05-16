@@ -1868,7 +1868,7 @@
     <string name="collection_editor_choice_both">Και τα δύο</string>
     <string name="collection_editor_resolved_trakt_list">Επιλυμένη λίστα Trakt</string>
     <string name="collection_editor_trakt_search_placeholder">Αναζήτηση τίτλου, URL Trakt ή ID λίστας</string>
-    <string name="collection_editor_trakt_name_placeholder">Σαββατοκύριακο θέασης, Νικητές βραβείων</string>
+    <string name="collection_editor_trakt_name_placeholder">Παρακολούθηση Σαββατοκύριακου, Νικητές βραβείων</string>
     <string name="collection_editor_folder_count_one">%1$d στοιχείο</string>
     <string name="collection_editor_folder_count_other">%1$d στοιχεία</string>
     <string name="collections_editor_tmdb_movie_title_placeholder">Ταινίες Marvel, Netflix Originals, Pixar</string>
