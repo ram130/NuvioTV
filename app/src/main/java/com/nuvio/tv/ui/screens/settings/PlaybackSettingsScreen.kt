@@ -768,7 +768,6 @@ private fun SliderSettingsItemLayout(
     onDecrease: () -> Unit,
     onIncrease: () -> Unit,
     onFocused: () -> Unit,
-    extraModifier: Modifier = Modifier,
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val contentAlpha = if (enabled) 1f else 0.4f
@@ -777,7 +776,6 @@ private fun SliderSettingsItemLayout(
         onClick = { },
         modifier = Modifier
             .fillMaxWidth()
-            .then(extraModifier)
             .onFocusChanged { state ->
                 val nowFocused = state.isFocused
                 if (isFocused != nowFocused) {
