@@ -12,6 +12,7 @@ import com.nuvio.tv.data.local.NextEpisodeThresholdMode
 import com.nuvio.tv.data.local.StreamAutoPlayMode
 import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.data.local.AddonSubtitleStartupMode
+import com.nuvio.tv.data.local.AudioOutputChannels
 import com.nuvio.tv.data.local.AutoSkipSegmentType
 import com.nuvio.tv.data.local.MpvHardwareDecodeMode
 import com.nuvio.tv.data.local.SubtitleOrganizationMode
@@ -87,6 +88,18 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     suspend fun setDecoderPriority(priority: Int) {
         playerSettingsDataStore.setDecoderPriority(priority)
+    }
+
+    suspend fun setDownmixEnabled(enabled: Boolean) {
+        playerSettingsDataStore.setDownmixEnabled(enabled)
+    }
+
+    suspend fun setAudioOutputChannels(channels: AudioOutputChannels) {
+        playerSettingsDataStore.setAudioOutputChannels(channels)
+    }
+
+    suspend fun setMaintainOriginalAudioOnDownmix(enabled: Boolean) {
+        playerSettingsDataStore.setMaintainOriginalAudioOnDownmix(enabled)
     }
 
     suspend fun setTunnelingEnabled(enabled: Boolean) {

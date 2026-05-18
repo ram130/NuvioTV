@@ -152,6 +152,7 @@ fun PlaybackSettingsContent(
     var showOutlineColorDialog by remember { mutableStateOf(false) }
     var showAudioLanguageDialog by remember { mutableStateOf(false) }
     var showSecondaryAudioLanguageDialog by remember { mutableStateOf(false) }
+    var showAudioOutputChannelsDialog by remember { mutableStateOf(false) }
     var showDecoderPriorityDialog by remember { mutableStateOf(false) }
     var showMpvHardwareDecodeModeDialog by remember { mutableStateOf(false) }
     var showStreamAutoPlayModeDialog by remember { mutableStateOf(false) }
@@ -174,6 +175,7 @@ fun PlaybackSettingsContent(
         showOutlineColorDialog = false
         showAudioLanguageDialog = false
         showSecondaryAudioLanguageDialog = false
+        showAudioOutputChannelsDialog = false
         showDecoderPriorityDialog = false
         showMpvHardwareDecodeModeDialog = false
         showStreamAutoPlayModeDialog = false
@@ -215,6 +217,7 @@ fun PlaybackSettingsContent(
                 onShowInternalPlayerEngineDialog = { openDialog { showInternalPlayerEngineDialog = true } },
                 onShowAudioLanguageDialog = { openDialog { showAudioLanguageDialog = true } },
                 onShowSecondaryAudioLanguageDialog = { openDialog { showSecondaryAudioLanguageDialog = true } },
+                onShowAudioOutputChannelsDialog = { openDialog { showAudioOutputChannelsDialog = true } },
                 onShowDecoderPriorityDialog = { openDialog { showDecoderPriorityDialog = true } },
                 onShowMpvHardwareDecodeModeDialog = { openDialog { showMpvHardwareDecodeModeDialog = true } },
                 onShowLanguageDialog = { openDialog { showLanguageDialog = true } },
@@ -281,6 +284,12 @@ fun PlaybackSettingsContent(
                 },
                 onSetTrailerEnabled = { enabled -> coroutineScope.launch { viewModel.setTrailerEnabled(enabled) } },
                 onSetTrailerDelaySeconds = { seconds -> coroutineScope.launch { viewModel.setTrailerDelaySeconds(seconds) } },
+                onSetDownmixEnabled = { enabled ->
+                    coroutineScope.launch { viewModel.setDownmixEnabled(enabled) }
+                },
+                onSetMaintainOriginalAudioOnDownmix = { enabled ->
+                    coroutineScope.launch { viewModel.setMaintainOriginalAudioOnDownmix(enabled) }
+                },
                 onSetSkipSilence = { enabled -> coroutineScope.launch { viewModel.setSkipSilence(enabled) } },
                 onSetRememberAudioDelayPerDevice = { enabled ->
                     coroutineScope.launch { viewModel.setRememberAudioDelayPerDevice(enabled) }
@@ -325,6 +334,7 @@ fun PlaybackSettingsContent(
         showOutlineColorDialog = showOutlineColorDialog,
         showAudioLanguageDialog = showAudioLanguageDialog,
         showSecondaryAudioLanguageDialog = showSecondaryAudioLanguageDialog,
+        showAudioOutputChannelsDialog = showAudioOutputChannelsDialog,
         showDecoderPriorityDialog = showDecoderPriorityDialog,
         showMpvHardwareDecodeModeDialog = showMpvHardwareDecodeModeDialog,
         showStreamAutoPlayModeDialog = showStreamAutoPlayModeDialog,
@@ -366,6 +376,9 @@ fun PlaybackSettingsContent(
         onSetSecondaryPreferredAudioLanguage = { language ->
             coroutineScope.launch { viewModel.setSecondaryPreferredAudioLanguage(language) }
         },
+        onSetAudioOutputChannels = { channels ->
+            coroutineScope.launch { viewModel.setAudioOutputChannels(channels) }
+        },
         onSetDecoderPriority = { priority ->
             coroutineScope.launch { viewModel.setDecoderPriority(priority) }
         },
@@ -401,6 +414,7 @@ fun PlaybackSettingsContent(
         onDismissOutlineColorDialog = ::dismissAllDialogs,
         onDismissAudioLanguageDialog = ::dismissAllDialogs,
         onDismissSecondaryAudioLanguageDialog = ::dismissAllDialogs,
+        onDismissAudioOutputChannelsDialog = ::dismissAllDialogs,
         onDismissDecoderPriorityDialog = ::dismissAllDialogs,
         onDismissMpvHardwareDecodeModeDialog = ::dismissAllDialogs,
         onDismissStreamAutoPlayModeDialog = ::dismissAllDialogs,

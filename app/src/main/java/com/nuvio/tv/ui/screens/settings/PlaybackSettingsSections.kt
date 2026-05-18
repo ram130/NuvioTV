@@ -63,6 +63,7 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.data.local.AddonSubtitleStartupMode
+import com.nuvio.tv.data.local.AudioOutputChannels
 import com.nuvio.tv.data.local.AutoSkipSegmentType
 import com.nuvio.tv.data.local.FrameRateMatchingMode
 import com.nuvio.tv.data.local.InternalPlayerEngine
@@ -107,6 +108,7 @@ internal fun PlaybackSettingsSections(
     onShowInternalPlayerEngineDialog: () -> Unit,
     onShowAudioLanguageDialog: () -> Unit,
     onShowSecondaryAudioLanguageDialog: () -> Unit,
+    onShowAudioOutputChannelsDialog: () -> Unit,
     onShowDecoderPriorityDialog: () -> Unit,
     onShowMpvHardwareDecodeModeDialog: () -> Unit,
     onShowLanguageDialog: () -> Unit,
@@ -145,6 +147,8 @@ internal fun PlaybackSettingsSections(
     onDisableResolutionOnly: () -> Unit,
     onSetTrailerEnabled: (Boolean) -> Unit,
     onSetTrailerDelaySeconds: (Int) -> Unit,
+    onSetDownmixEnabled: (Boolean) -> Unit,
+    onSetMaintainOriginalAudioOnDownmix: (Boolean) -> Unit,
     onSetSkipSilence: (Boolean) -> Unit,
     onSetRememberAudioDelayPerDevice: (Boolean) -> Unit,
     onSetTunnelingEnabled: (Boolean) -> Unit,
@@ -539,10 +543,13 @@ internal fun PlaybackSettingsSections(
                 trailerSettings = trailerSettings,
                 onShowAudioLanguageDialog = onShowAudioLanguageDialog,
                 onShowSecondaryAudioLanguageDialog = onShowSecondaryAudioLanguageDialog,
+                onShowAudioOutputChannelsDialog = onShowAudioOutputChannelsDialog,
                 onShowDecoderPriorityDialog = onShowDecoderPriorityDialog,
                 onShowMpvHardwareDecodeModeDialog = onShowMpvHardwareDecodeModeDialog,
                 onSetTrailerEnabled = onSetTrailerEnabled,
                 onSetTrailerDelaySeconds = onSetTrailerDelaySeconds,
+                onSetDownmixEnabled = onSetDownmixEnabled,
+                onSetMaintainOriginalAudioOnDownmix = onSetMaintainOriginalAudioOnDownmix,
                 onSetSkipSilence = onSetSkipSilence,
                 onSetRememberAudioDelayPerDevice = onSetRememberAudioDelayPerDevice,
                 onSetTunnelingEnabled = onSetTunnelingEnabled,
@@ -882,6 +889,7 @@ internal fun PlaybackSettingsDialogsHost(
     showOutlineColorDialog: Boolean,
     showAudioLanguageDialog: Boolean,
     showSecondaryAudioLanguageDialog: Boolean,
+    showAudioOutputChannelsDialog: Boolean,
     showDecoderPriorityDialog: Boolean,
     showMpvHardwareDecodeModeDialog: Boolean,
     showStreamAutoPlayModeDialog: Boolean,
@@ -903,6 +911,7 @@ internal fun PlaybackSettingsDialogsHost(
     onSetSubtitleOutlineColor: (Color) -> Unit,
     onSetPreferredAudioLanguage: (String) -> Unit,
     onSetSecondaryPreferredAudioLanguage: (String?) -> Unit,
+    onSetAudioOutputChannels: (AudioOutputChannels) -> Unit,
     onSetDecoderPriority: (Int) -> Unit,
     onSetMpvHardwareDecodeMode: (com.nuvio.tv.data.local.MpvHardwareDecodeMode) -> Unit,
     onSetStreamAutoPlayMode: (com.nuvio.tv.data.local.StreamAutoPlayMode) -> Unit,
@@ -920,6 +929,7 @@ internal fun PlaybackSettingsDialogsHost(
     onDismissOutlineColorDialog: () -> Unit,
     onDismissAudioLanguageDialog: () -> Unit,
     onDismissSecondaryAudioLanguageDialog: () -> Unit,
+    onDismissAudioOutputChannelsDialog: () -> Unit,
     onDismissDecoderPriorityDialog: () -> Unit,
     onDismissMpvHardwareDecodeModeDialog: () -> Unit,
     onDismissStreamAutoPlayModeDialog: () -> Unit,
@@ -977,18 +987,22 @@ internal fun PlaybackSettingsDialogsHost(
     AudioSettingsDialogs(
         showAudioLanguageDialog = showAudioLanguageDialog,
         showSecondaryAudioLanguageDialog = showSecondaryAudioLanguageDialog,
+        showAudioOutputChannelsDialog = showAudioOutputChannelsDialog,
         showDecoderPriorityDialog = showDecoderPriorityDialog,
         showMpvHardwareDecodeModeDialog = showMpvHardwareDecodeModeDialog,
         selectedLanguage = playerSettings.preferredAudioLanguage,
         selectedSecondaryLanguage = playerSettings.secondaryPreferredAudioLanguage,
+        selectedAudioOutputChannels = playerSettings.audioOutputChannels,
         selectedPriority = playerSettings.decoderPriority,
         selectedMpvHardwareDecodeMode = playerSettings.mpvHardwareDecodeMode,
         onSetPreferredAudioLanguage = onSetPreferredAudioLanguage,
         onSetSecondaryPreferredAudioLanguage = onSetSecondaryPreferredAudioLanguage,
+        onSetAudioOutputChannels = onSetAudioOutputChannels,
         onSetDecoderPriority = onSetDecoderPriority,
         onSetMpvHardwareDecodeMode = onSetMpvHardwareDecodeMode,
         onDismissAudioLanguageDialog = onDismissAudioLanguageDialog,
         onDismissSecondaryAudioLanguageDialog = onDismissSecondaryAudioLanguageDialog,
+        onDismissAudioOutputChannelsDialog = onDismissAudioOutputChannelsDialog,
         onDismissDecoderPriorityDialog = onDismissDecoderPriorityDialog,
         onDismissMpvHardwareDecodeModeDialog = onDismissMpvHardwareDecodeModeDialog
     )
