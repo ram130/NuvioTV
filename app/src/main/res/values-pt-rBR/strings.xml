@@ -138,7 +138,7 @@
     <string name="error_stream_tried_none">Addons de fonte testados: %1$s. Nenhum deles retornou fontess para id=%2$s (tipo=%3$s).</string>
     <string name="error_stream_tried_generic">Addons de fonte testados: %1$s. Não foi possível carregar fontess para id=%2$s (tipo=%3$s).</string>
     <string name="error_stream_tried_issues">Addons de fonte testados: %1$s. Não foi possível carregar fontes para id=%2$s (tipo=%3$s). Problemas: %4$s.</string>
-   
+
     <!-- ContinueWatchingSection -->
     <string name="continue_watching">Continuar assistindo</string>
     <string name="cw_upcoming">Em breve</string>
@@ -192,7 +192,7 @@
     <string name="episodes_open_comments">Ver comentários do episódio</string>
     <string name="play_manually">Assistir manualmente</string>
     <string name="episodes_season_actions">Opções da temporada</string>
-        
+
     <!-- MetaDetailsViewModel -->
     <string name="detail_added_to_library">Adicionado à Biblioteca</string>
     <string name="detail_removed_from_library">Removido da Biblioteca</string>
@@ -208,7 +208,7 @@
     <string name="detail_marked_episodes_watched">%1$d episódios marcados como assistidos</string>
     <string name="detail_marked_episodes_unwatched">%1$d episódios desmarcados</string>
     <string name="detail_marked_previous_watched">%1$d episódios anteriores marcados</string>
-    
+
     <!-- MetaDetailsScreen -->
     <string name="detail_btn_play">Assistir</string>
     <string name="detail_btn_resume">Continuar</string>
@@ -301,7 +301,7 @@
     <string name="appearance_font">Fonte do App</string>
     <string name="appearance_font_subtitle">Escolha sua fonte preferida</string>
     <string name="appearance_font_dialog_title">Escolha a fonte</string>
-    
+
     <!-- ThemeSettingsScreen -->
     <string name="appearance_title">Aparência</string>
     <string name="appearance_subtitle">Escolha o tema, fonte e idioma</string>
@@ -356,7 +356,7 @@
     <string name="licenses_attributions_exoplayer_body">Usado como motor de reprodução Android. Licenciado sob a Apache License, Versão 2.0.</string>
     <string name="licenses_attributions_libmpv_title">libmpv / libmpv-android</string>
     <string name="licenses_attributions_libmpv_body">Usado como motor de reprodução Android. O wrapper libmpv-android é licenciado sob a licença MIT; mpv/libmpv e componentes nativos incluídos mantêm seus termos de licença originais.</string>
-        
+
     <!-- SettingsScreen categories -->3
     <string name="settings_experience">Experiência</string>
     <string name="settings_experience_subtitle">Essencial ou Avançada</string>
@@ -528,7 +528,7 @@
     <string name="contributors_show_kofi_qr">Mostrar QR do Ko-fi</string>
     <string name="contributors_hide_kofi_qr">Ocultar QR do Ko-fi</string>
     <string name="contributors_profile_unavailable">Link do perfil no GitHub indisponível.</string>
-    
+
     <!-- PlaybackSettingsSections -->
     <string name="playback_section_general">Geral</string>
     <string name="playback_section_general_desc">Comportamento principal do player</string>
@@ -629,7 +629,7 @@
     <string name="audio_decoder_prefer_device_desc">Usa hardware, FFmpeg como fallback</string>
     <string name="audio_decoder_prefer_app_desc">Usa FFmpeg, mais CPU</string>
     <string name="audio_decoder_controls">Define uso de hardware ou software</string>
-    
+
     <!-- PlaybackSubtitleSettings -->
         <string name="sub_section">Legendas</string>
     <string name="sub_not_set">Não definido</string>
@@ -800,7 +800,7 @@
     <string name="layout_prefer_external_meta">Priorizar metadados externos</string>
     <string name="layout_prefer_external_meta_sub">Use dados de addons externos em vez do padrão.</string>
     <string name="layout_show_full_release_date">Data de lançamento completa</string>
-    <string name="layout_show_full_release_date_sub">Exiba a data completa em vez de apenas o ano.</string> 
+    <string name="layout_show_full_release_date_sub">Exiba a data completa em vez de apenas o ano.</string>
     <string name="layout_section_focused">Foco no Pôster</string>
     <string name="layout_section_focused_desc">Defina o comportamento ao selecionar um título.</string>
     <string name="layout_expand_poster">Expandir pôster selecionado</string>
@@ -840,7 +840,7 @@
     <string name="layout_reset_default">Redefinir para Padrão</string>
     <string name="layout_custom">Personalizado</string>
 
-    
+
     <!-- MDBListSettingsScreen -->
     <string name="mdblist_title">Avaliações do MDBList</string>
     <string name="mdblist_subtitle">Configure avaliações externas no destaque.</string>
@@ -880,7 +880,7 @@
     <string name="animeskip_dialog_placeholder">Digite o ID de Cliente</string>
     <string name="animeskip_invalid_client_id">ID de Cliente inválido</string>
     <string name="action_clear">Limpar</string>
-    
+
    <!-- TmdbSettingsScreen -->
     <string name="tmdb_title">Enriquecimento TMDB</string>
     <string name="tmdb_subtitle">Escolha quais metadados virão do TMDB</string>
@@ -914,9 +914,9 @@
     <string name="tmdb_more_like_this_subtitle">Sugestões do TMDB com planos de fundo na página de detalhes</string>
     <string name="tmdb_collections_title">Coleções</string>
     <string name="tmdb_collections_subtitle">Coleções de filmes do TMDB por ordem de lançamento</string>
-   
+
     <string name="tmdb_language_dialog_title">Idioma do TMDB</string>
-    
+
     <!-- TraktScreen -->
     <string name="trakt_description">Sincronize sua Biblioteca, progresso, histórico (scrobbles) e listas pessoais com o Trakt.</string>
     <string name="trakt_connected_as">Conectado como %1$s</string>
@@ -1016,7 +1016,7 @@
     <string name="debug_generate_library_placeholder">Número de itens</string>
     <string name="debug_generate_library_button">Gerar</string>
     <string name="debug_generating_library">Gerando…</string>
-    
+
     <!-- ProfileSettingsContent -->
     <string name="profile_title">Perfis</string>
     <string name="profile_subtitle">Gerencie os perfis desta conta</string>
@@ -1088,7 +1088,7 @@
     <string name="profile_pin_overlay_forgot_hint">Esqueceu o PIN? Redefina-o pelo site do Nuvio na sua conta.</string>
     <string name="profile_pin_overlay_back_hint">Pressione "Voltar" para cancelar.</string>
 
-   
+
      <!-- Essential addon setup wizard -->
     <string name="essential_addon_setup_title">Configurar add-ons</string>
     <string name="essential_addon_setup_subtitle">Instale um add-on para começar a assistir. Você pode adicionar mais depois em Addons.</string>
@@ -1146,7 +1146,7 @@
     <string name="catalog_order_enable">Ativar</string>
     <string name="catalog_order_disable">Ocultar</string>
 
-    
+
     <!-- StreamScreen -->
     <string name="stream_retry">Tentar novamente</string>
     <string name="stream_no_streams">Nenhuma fonte encontrada</string>
@@ -1199,7 +1199,7 @@
     <string name="subtitle_timing_press_back_cancel">Pressione Voltar para cancelar</string>
     <string name="subtitle_timing_captured_at">Capturado em %1$s</string>
     <string name="subtitle_timing_capturing">Capturando…</string>
-    
+
     <!-- ParentalGuideOverlay -->
     <string name="parental_nudity">Nudez</string>
     <string name="parental_violence">Violência</string>
@@ -1220,7 +1220,7 @@
     <string name="player_more_actions_title">Mais opções</string>
     <string name="player_more_speed">Velocidade de reprodução</string>
     <string name="player_more_aspect_ratio">Proporção</string>
-    <string name="player_more_open_external">Abrir em Player Externo</string>    
+    <string name="player_more_open_external">Abrir em Player Externo</string>
 
     <!-- StreamInfoOverlay -->
     <string name="stream_info_section_source">FONTE</string>
@@ -1597,7 +1597,7 @@
     <string name="plugin_enabled">Ativado</string>
     <string name="plugin_disabled">Desativado</string>
     <string name="plugin_no_repos">Nenhum repositório adicionado.\nAdicione um para começar.</string>
-    
+
     <!-- ProfileSettingsContent -->
     <string name="profile_edit_title_id">Editar Perfil %1$d</string>
 
@@ -1704,7 +1704,7 @@
     <!-- General errors -->
     <string name="error_unknown">Erro desconhecido</string>
     <string name="addon_error_not_found">Extensão não encontrada</string>
-    
+
     <!-- Account errors -->
     <string name="account_error_signin_required">Entre com uma conta primeiro.</string>
 
@@ -1718,7 +1718,7 @@
     <!-- Player errors -->
     <string name="player_error_no_stream_url">Nenhuma URL de fonte fornecida</string>
     <string name="player_error_failed_start_torrent">Falha ao iniciar torrent: %1$s</string>
-    
+
     <!-- Playback subtitle settings -->
     <string name="sub_mode_overlay_canvas_sub">Suporte HDR com renderização em canvas. Pode bloquear a interface.</string>
     <string name="subtitle_style_weight">Espessura</string>

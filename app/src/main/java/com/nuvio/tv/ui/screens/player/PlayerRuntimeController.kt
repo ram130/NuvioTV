@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer
 import com.nuvio.tv.core.plugin.PluginManager
 import com.nuvio.tv.core.torrent.TorrentService
 import com.nuvio.tv.data.local.AutoSkipSegmentType
@@ -321,6 +322,7 @@ class PlayerRuntimeController(
     internal var mpvPreferredAudioLanguages: List<String> = emptyList()
     internal var currentStreamBingeGroup: String? = navigationArgs.bingeGroup
     internal var hasInitializedAudioAmplificationForSession: Boolean = false
+    internal var hasInitializedCenterMixForSession: Boolean = false
     internal var rememberAudioDelayPerDeviceEnabled: Boolean = false
     internal var currentAudioOutputRoute: AudioOutputRoute? = null
     internal var audioOutputRouteCallback: AudioDeviceCallback? = null
@@ -330,6 +332,7 @@ class PlayerRuntimeController(
     internal val gainAudioProcessor = GainAudioProcessor()
     internal var trackSelector: DefaultTrackSelector? = null
     internal var currentMediaSession: MediaSession? = null
+    internal var ffmpegAudioRenderer: FfmpegAudioRenderer? = null
     internal var mpvView: NuvioMpvSurfaceView? = null
     internal var mpvInitializationInProgress: Boolean = false
     internal var mpvTrackRefreshInProgress: Boolean = false

@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 
 internal const val AUDIO_AMPLIFICATION_MIN_DB = 0
 internal const val AUDIO_AMPLIFICATION_MAX_DB = 10
+internal const val CENTER_MIX_LEVEL_MIN_DB = -10
+internal const val CENTER_MIX_LEVEL_MAX_DB = 30
 internal const val AUDIO_DELAY_MIN_MS = -3000
 internal const val AUDIO_DELAY_MAX_MS = 3000
 internal const val AUDIO_DELAY_STEP_MS = 25
@@ -52,14 +54,58 @@ internal fun PlayerRuntimeController.skipInterval(interval: SkipInterval): Boole
 
 internal fun PlayerRuntimeController.applyAudioAmplification(db: Int) {
     val clampedDb = db.coerceIn(AUDIO_AMPLIFICATION_MIN_DB, AUDIO_AMPLIFICATION_MAX_DB)
-    gainAudioProcessor.setGainDb(clampedDb)
+    val isAudioPathActive = ffmpegAudioRenderer?.isAudioPathActive() == true
+    val wasActive = gainAudioProcessor.isGainEnabled()
+    gainAudioProcessor.setGainDb(
+        if (isAudioPathActive) clampedDb else AUDIO_AMPLIFICATION_MIN_DB
+    )
+    val isActiveNow = gainAudioProcessor.isGainEnabled()
+
+    if (wasActive != isActiveNow && !isUsingMpvEngine()) {
+        playbackSpeedAwareAudioSink?.notifyAudioProcessingRequirementChanged()
+        _exoPlayer?.let { player ->
+            player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().build()
+        }
+    }
+
     if (isUsingMpvEngine()) {
         mpvView?.applyAudioAmplificationDb(clampedDb)
     }
     _uiState.update {
         it.copy(
             audioAmplificationDb = clampedDb,
-            isAudioAmplificationAvailable = true
+            isAudioAmplificationAvailable = isAudioPathActive || isUsingMpvEngine()
+        )
+    }
+}
+
+internal fun PlayerRuntimeController.applyCenterMixLevel(db: Int) {
+    val clampedDb = db.coerceIn(CENTER_MIX_LEVEL_MIN_DB, CENTER_MIX_LEVEL_MAX_DB)
+    ffmpegAudioRenderer?.setCenterMixLevelDb(clampedDb)
+    _uiState.update { state ->
+        state.copy(centerMixLevelDb = clampedDb)
+    }
+}
+
+internal fun PlayerRuntimeController.updateAudioControlAvailability(
+    audioTracks: List<TrackInfo> = _uiState.value.audioTracks,
+    selectedAudioIndex: Int = _uiState.value.selectedAudioTrackIndex
+) {
+    val selectedTrack = audioTracks.getOrNull(selectedAudioIndex)
+    val isAudioAmplificationAvailable =
+        isUsingMpvEngine() || ffmpegAudioRenderer?.isAudioPathActive() == true
+    val shouldApplyExoGain = ffmpegAudioRenderer?.isAudioPathActive() == true
+    val isCenterMixAvailable =
+        ffmpegAudioRenderer?.isCenterMixActive() == true && (selectedTrack?.channelCount ?: 0) > 2
+    val clampedDb = _uiState.value.audioAmplificationDb
+        .coerceIn(AUDIO_AMPLIFICATION_MIN_DB, AUDIO_AMPLIFICATION_MAX_DB)
+    gainAudioProcessor.setGainDb(
+        if (shouldApplyExoGain) clampedDb else AUDIO_AMPLIFICATION_MIN_DB
+    )
+    _uiState.update { state ->
+        state.copy(
+            isAudioAmplificationAvailable = isAudioAmplificationAvailable,
+            isCenterMixAvailable = isCenterMixAvailable
         )
     }
 }
@@ -704,12 +750,23 @@ fun PlayerRuntimeController.onEvent(event: PlayerEvent) {
         }
         is PlayerEvent.OnSetPersistAudioAmplification -> {
             val currentDb = _uiState.value.audioAmplificationDb
+            val currentCenterMixDb = _uiState.value.centerMixLevelDb
             _uiState.update { it.copy(persistAudioAmplification = event.enabled) }
             scope.launch {
                 playerSettingsDataStore.setPersistAudioAmplification(
                     enabled = event.enabled,
-                    dbToPersist = if (event.enabled) currentDb else null
+                    dbToPersist = if (event.enabled) currentDb else null,
+                    centerMixDbToPersist = if (event.enabled) currentCenterMixDb else null
                 )
+            }
+        }
+        is PlayerEvent.OnSetCenterMixLevelDb -> {
+            val clampedDb = event.db.coerceIn(CENTER_MIX_LEVEL_MIN_DB, CENTER_MIX_LEVEL_MAX_DB)
+            applyCenterMixLevel(clampedDb)
+            if (_uiState.value.persistAudioAmplification) {
+                scope.launch {
+                    playerSettingsDataStore.setCenterMixLevelDb(clampedDb)
+                }
             }
         }
         is PlayerEvent.OnSelectSubtitleTrack -> {

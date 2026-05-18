@@ -161,6 +161,32 @@ object AudioLanguageOption {
     const val ORIGINAL = "original"  // Use content's original language (from TMDB)
 }
 
+enum class AudioOutputChannels(
+    val settingValue: String,
+    val displayLabel: String,
+    val channelCount: Int,
+    val ffmpegLayoutName: String
+) {
+    CHANNELS_2_0("2.0", "2.0", 2, "stereo"),
+    CHANNELS_2_1("2.1", "2.1", 3, "2.1"),
+    CHANNELS_3_0("3.0", "3.0", 3, "3.0"),
+    CHANNELS_3_1("3.1", "3.1", 4, "3.1"),
+    CHANNELS_4_0("4.0", "4.0", 4, "4.0"),
+    CHANNELS_4_1("4.1", "4.1", 5, "4.1"),
+    CHANNELS_5_0("5.0", "5.0", 5, "5.0"),
+    CHANNELS_5_1("5.1", "5.1", 6, "5.1"),
+    CHANNELS_7_0("7.0", "7.0", 7, "7.0"),
+    CHANNELS_7_1("7.1", "7.1", 8, "7.1");
+
+    companion object {
+        val default = CHANNELS_7_1
+
+        fun fromSettingValue(value: String?): AudioOutputChannels {
+            return entries.firstOrNull { it.settingValue == value } ?: default
+        }
+    }
+}
+
 /**
  * Data class representing player settings
  */
@@ -174,9 +200,13 @@ data class PlayerSettings(
     val bufferSettings: BufferSettings = BufferSettings(),
     // Audio settings
     val decoderPriority: Int = 1, // EXTENSION_RENDERER_MODE_ON (0=off, 1=on, 2=prefer)
+    val downmixEnabled: Boolean = false,
+    val audioOutputChannels: AudioOutputChannels = AudioOutputChannels.default,
+    val maintainOriginalAudioOnDownmix: Boolean = true,
     val tunnelingEnabled: Boolean = false,
     val skipSilence: Boolean = false,
     val audioAmplificationDb: Int = 0,
+    val centerMixLevelDb: Int = 0,
     val persistAudioAmplification: Boolean = false,
     val rememberAudioDelayPerDevice: Boolean = true,
     val preferredAudioLanguage: String = AudioLanguageOption.DEVICE,
@@ -332,6 +362,8 @@ class PlayerSettingsDataStore @Inject constructor(
         private const val FEATURE = "player_settings"
         private const val AUDIO_AMPLIFICATION_DB_MIN = 0
         private const val AUDIO_AMPLIFICATION_DB_MAX = 10
+        private const val CENTER_MIX_LEVEL_DB_MIN = -10
+        private const val CENTER_MIX_LEVEL_DB_MAX = 30
     }
 
     private fun store(profileId: Int = profileManager.activeProfileId.value) =
@@ -351,9 +383,16 @@ class PlayerSettingsDataStore @Inject constructor(
 
     // Audio settings keys
     private val decoderPriorityKey = intPreferencesKey("decoder_priority")
+    private val downmixEnabledKey = booleanPreferencesKey("downmix_enabled")
+    private val audioOutputChannelsKey = stringPreferencesKey("audio_output_channels")
+    private val maintainOriginalAudioOnDownmixKey =
+        booleanPreferencesKey("maintain_original_audio_on_downmix")
+    private val downmixNormalizationEnabledLegacyKey =
+        booleanPreferencesKey("downmix_normalization_enabled")
     private val tunnelingEnabledKey = booleanPreferencesKey("tunneling_enabled")
     private val skipSilenceKey = booleanPreferencesKey("skip_silence")
     private val audioAmplificationDbKey = intPreferencesKey("audio_amplification_db")
+    private val centerMixLevelDbKey = intPreferencesKey("center_mix_level_db")
     private val persistAudioAmplificationKey = booleanPreferencesKey("persist_audio_amplification")
     private val rememberAudioDelayPerDeviceKey = booleanPreferencesKey("remember_audio_delay_per_device")
     private val preferredAudioLanguageKey = stringPreferencesKey("preferred_audio_language")
@@ -523,11 +562,28 @@ class PlayerSettingsDataStore @Inject constructor(
                     try { LibassRenderType.valueOf(it) } catch (e: Exception) { LibassRenderType.OVERLAY_OPEN_GL }
                 } ?: LibassRenderType.OVERLAY_OPEN_GL,
                 decoderPriority = prefs[decoderPriorityKey] ?: 1,
+                downmixEnabled =
+                    prefs[downmixEnabledKey]
+                        ?: (
+                            prefs[audioOutputChannelsKey] != null ||
+                                prefs[maintainOriginalAudioOnDownmixKey] != null ||
+                                prefs[downmixNormalizationEnabledLegacyKey] != null
+                            ),
+                audioOutputChannels = AudioOutputChannels.fromSettingValue(
+                    prefs[audioOutputChannelsKey]
+                ),
+                maintainOriginalAudioOnDownmix =
+                    prefs[maintainOriginalAudioOnDownmixKey]
+                        ?: !(prefs[downmixNormalizationEnabledLegacyKey] ?: false),
                 tunnelingEnabled = prefs[tunnelingEnabledKey] ?: false,
                 skipSilence = prefs[skipSilenceKey] ?: false,
                 audioAmplificationDb = (prefs[audioAmplificationDbKey] ?: 0).coerceIn(
                     AUDIO_AMPLIFICATION_DB_MIN,
                     AUDIO_AMPLIFICATION_DB_MAX
+                ),
+                centerMixLevelDb = (prefs[centerMixLevelDbKey] ?: 0).coerceIn(
+                    CENTER_MIX_LEVEL_DB_MIN,
+                    CENTER_MIX_LEVEL_DB_MAX
                 ),
                 persistAudioAmplification = prefs[persistAudioAmplificationKey] ?: false,
                 rememberAudioDelayPerDevice = prefs[rememberAudioDelayPerDeviceKey] ?: true,
@@ -682,6 +738,26 @@ class PlayerSettingsDataStore @Inject constructor(
         }
     }
 
+    suspend fun setDownmixEnabled(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[downmixEnabledKey] = enabled
+        }
+    }
+
+    suspend fun setAudioOutputChannels(channels: AudioOutputChannels) {
+        store().edit { prefs ->
+            prefs[downmixEnabledKey] = true
+            prefs[audioOutputChannelsKey] = channels.settingValue
+        }
+    }
+
+    suspend fun setMaintainOriginalAudioOnDownmix(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[downmixEnabledKey] = true
+            prefs[maintainOriginalAudioOnDownmixKey] = enabled
+        }
+    }
+
     suspend fun setTunnelingEnabled(enabled: Boolean) {
         store().edit { prefs ->
             prefs[tunnelingEnabledKey] = enabled
@@ -703,13 +779,32 @@ class PlayerSettingsDataStore @Inject constructor(
         }
     }
 
-    suspend fun setPersistAudioAmplification(enabled: Boolean, dbToPersist: Int? = null) {
+    suspend fun setCenterMixLevelDb(db: Int) {
+        store().edit { prefs ->
+            prefs[centerMixLevelDbKey] = db.coerceIn(
+                CENTER_MIX_LEVEL_DB_MIN,
+                CENTER_MIX_LEVEL_DB_MAX
+            )
+        }
+    }
+
+    suspend fun setPersistAudioAmplification(
+        enabled: Boolean,
+        dbToPersist: Int? = null,
+        centerMixDbToPersist: Int? = null
+    ) {
         store().edit { prefs ->
             prefs[persistAudioAmplificationKey] = enabled
             if (enabled && dbToPersist != null) {
                 prefs[audioAmplificationDbKey] = dbToPersist.coerceIn(
                     AUDIO_AMPLIFICATION_DB_MIN,
                     AUDIO_AMPLIFICATION_DB_MAX
+                )
+            }
+            if (enabled && centerMixDbToPersist != null) {
+                prefs[centerMixLevelDbKey] = centerMixDbToPersist.coerceIn(
+                    CENTER_MIX_LEVEL_DB_MIN,
+                    CENTER_MIX_LEVEL_DB_MAX
                 )
             }
         }
