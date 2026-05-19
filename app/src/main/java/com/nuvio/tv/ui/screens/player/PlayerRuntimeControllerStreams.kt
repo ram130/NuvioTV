@@ -116,6 +116,8 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
 
         val installedAddons = addonRepository.getInstalledAddons().first()
         val installedAddonOrder = installedAddons.map { it.displayName }
+        val installedAddonNames = installedAddonOrder.toSet()
+        var debridPreparationLaunched = false
         updateSourceChipsForFetchStart(type, vid, installedAddons)
 
         streamRepository.getStreamsFromAllAddons(
@@ -151,6 +153,13 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
                             sourceStreamsError = null
                         )
                     }
+                    launchSourceDebridPreparationIfNeeded(
+                        launched = debridPreparationLaunched,
+                        streams = allStreams,
+                        season = seasonArg,
+                        episode = episodeArg,
+                        installedAddonNames = installedAddonNames,
+                    ) { debridPreparationLaunched = true }
                 }
 
                 is NetworkResult.Error -> {
@@ -168,6 +177,54 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
             }
         }
         markRemainingSourceChipsAsError()
+    }
+}
+
+private fun PlayerRuntimeController.launchSourceDebridPreparationIfNeeded(
+    launched: Boolean,
+    streams: List<Stream>,
+    season: Int?,
+    episode: Int?,
+    installedAddonNames: Set<String>,
+    markLaunched: () -> Unit
+) {
+    if (launched || streams.none { it.isDirectDebrid() && it.getStreamUrl().isNullOrBlank() }) {
+        return
+    }
+    markLaunched()
+    scope.launch {
+        val playerSettings = playerSettingsDataStore.playerSettings.first()
+        directDebridStreamPreparer.prepare(
+            streams = streams,
+            season = season,
+            episode = episode,
+            playerSettings = playerSettings,
+            installedAddonNames = installedAddonNames
+        ) { original, prepared ->
+            replacePreparedSourceStream(original, prepared)
+        }
+    }
+}
+
+private fun PlayerRuntimeController.replacePreparedSourceStream(
+    original: Stream,
+    prepared: Stream
+) {
+    _uiState.update { state ->
+        val updatedStreams = replacePreparedFlatStreams(
+            streams = state.sourceAllStreams,
+            original = original,
+            prepared = prepared
+        )
+        if (updatedStreams == state.sourceAllStreams) {
+            state
+        } else {
+            val selectedAddon = state.sourceSelectedAddonFilter
+            state.copy(
+                sourceAllStreams = updatedStreams,
+                sourceFilteredStreams = updatedStreams.filterByAddon(selectedAddon)
+            )
+        }
     }
 }
 
@@ -727,6 +784,8 @@ internal fun PlayerRuntimeController.loadStreamsForEpisode(video: Video, forceRe
 
         val installedAddons = addonRepository.getInstalledAddons().first()
         val installedAddonOrder = installedAddons.map { it.displayName }
+        val installedAddonNames = installedAddonOrder.toSet()
+        var debridPreparationLaunched = false
 
         streamRepository.getStreamsFromAllAddons(
             type = type,
@@ -755,6 +814,13 @@ internal fun PlayerRuntimeController.loadStreamsForEpisode(video: Video, forceRe
                             episodeStreamsError = null
                         )
                     }
+                    launchEpisodeDebridPreparationIfNeeded(
+                        launched = debridPreparationLaunched,
+                        streams = allStreams,
+                        season = video.season,
+                        episode = video.episode,
+                        installedAddonNames = installedAddonNames,
+                    ) { debridPreparationLaunched = true }
                 }
 
                 is NetworkResult.Error -> {
@@ -773,6 +839,80 @@ internal fun PlayerRuntimeController.loadStreamsForEpisode(video: Video, forceRe
         }
     }
 }
+
+private fun PlayerRuntimeController.launchEpisodeDebridPreparationIfNeeded(
+    launched: Boolean,
+    streams: List<Stream>,
+    season: Int?,
+    episode: Int?,
+    installedAddonNames: Set<String>,
+    markLaunched: () -> Unit
+) {
+    if (launched || streams.none { it.isDirectDebrid() && it.getStreamUrl().isNullOrBlank() }) {
+        return
+    }
+    markLaunched()
+    scope.launch {
+        val playerSettings = playerSettingsDataStore.playerSettings.first()
+        directDebridStreamPreparer.prepare(
+            streams = streams,
+            season = season,
+            episode = episode,
+            playerSettings = playerSettings,
+            installedAddonNames = installedAddonNames
+        ) { original, prepared ->
+            replacePreparedEpisodeStream(original, prepared)
+        }
+    }
+}
+
+private fun PlayerRuntimeController.replacePreparedEpisodeStream(
+    original: Stream,
+    prepared: Stream
+) {
+    _uiState.update { state ->
+        val updatedStreams = replacePreparedFlatStreams(
+            streams = state.episodeAllStreams,
+            original = original,
+            prepared = prepared
+        )
+        if (updatedStreams == state.episodeAllStreams) {
+            state
+        } else {
+            val selectedAddon = state.episodeSelectedAddonFilter
+            state.copy(
+                episodeAllStreams = updatedStreams,
+                episodeFilteredStreams = updatedStreams.filterByAddon(selectedAddon)
+            )
+        }
+    }
+}
+
+private fun PlayerRuntimeController.replacePreparedFlatStreams(
+    streams: List<Stream>,
+    original: Stream,
+    prepared: Stream
+): List<Stream> {
+    if (streams.isEmpty()) return streams
+    return directDebridStreamPreparer.replacePreparedStream(
+        groups = listOf(
+            AddonStreams(
+                addonName = "",
+                addonLogo = null,
+                streams = streams
+            )
+        ),
+        original = original,
+        prepared = prepared
+    ).firstOrNull()?.streams ?: streams
+}
+
+private fun List<Stream>.filterByAddon(addonName: String?): List<Stream> =
+    if (addonName == null) {
+        this
+    } else {
+        filter { it.addonName == addonName }
+    }
 
 internal fun PlayerRuntimeController.reloadEpisodeStreams() {
     val state = _uiState.value

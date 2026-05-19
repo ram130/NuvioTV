@@ -640,6 +640,7 @@ private fun DebridPrepareCountDialog(
 
     SettingsSingleChoiceDialog(
         title = stringResource(R.string.debrid_prepare_stream_count),
+        subtitle = stringResource(R.string.debrid_prepare_stream_count_warning),
         options = options.map { limit ->
             SettingsPickerOption(limit, prepareCountLabel(limit))
         },
