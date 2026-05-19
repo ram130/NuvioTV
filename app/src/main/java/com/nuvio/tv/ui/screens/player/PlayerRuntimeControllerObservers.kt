@@ -250,7 +250,18 @@ internal fun PlayerRuntimeController.observeSubtitleSettings() {
                 settings.persistAudioAmplification -> settings.audioAmplificationDb
                 else -> currentState.audioAmplificationDb
             }
-
+            val resolvedCenterMixLevelDb = when {
+                !hasInitializedCenterMixForSession -> {
+                    hasInitializedCenterMixForSession = true
+                    if (settings.persistAudioAmplification) {
+                        settings.centerMixLevelDb
+                    } else {
+                        0
+                    }
+                }
+                settings.persistAudioAmplification -> settings.centerMixLevelDb
+                else -> currentState.centerMixLevelDb
+            }
 
             _uiState.update { state ->
                 val shouldShowOverlay = if (settings.loadingOverlayEnabled && !hasRenderedFirstFrame) {
@@ -271,12 +282,16 @@ internal fun PlayerRuntimeController.observeSubtitleSettings() {
                     frameRateMatchingMode = settings.frameRateMatchingMode,
                     tunnelingEnabled = settings.tunnelingEnabled,
                     persistAudioAmplification = settings.persistAudioAmplification,
-                    audioAmplificationDb = resolvedAudioAmplificationDb
+                    audioAmplificationDb = resolvedAudioAmplificationDb,
+                    centerMixLevelDb = resolvedCenterMixLevelDb
                 )
             }
 
             if (resolvedAudioAmplificationDb != currentState.audioAmplificationDb) {
                 applyAudioAmplification(resolvedAudioAmplificationDb)
+            }
+            if (resolvedCenterMixLevelDb != currentState.centerMixLevelDb) {
+                applyCenterMixLevel(resolvedCenterMixLevelDb)
             }
 
             if (settings.rememberAudioDelayPerDevice && !wasRememberingAudioDelayPerDevice) {

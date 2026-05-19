@@ -1002,7 +1002,7 @@ private fun ModernCarouselCard(
         // updates land instantly. Inside landscape we still adopt the enriched
         // URL when there was no logo to begin with — otherwise the card would
         // permanently fall back to the title text whenever the addon manifest
-        // ships items without a logo (e.g. AIO Metadata for some shows) even
+        // ships items without a logo even
         // though TMDB has one. Once we have any non-blank value we keep it
         // frozen to avoid mid-scroll flicker on enrichment refresh.
         if (!useLandscapeOverlayTreatment || frozenLogoUrl.value.isNullOrBlank()) {

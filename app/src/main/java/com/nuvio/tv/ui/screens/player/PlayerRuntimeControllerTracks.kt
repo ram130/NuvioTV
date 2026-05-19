@@ -180,6 +180,7 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
             selectedSubtitleTrackIndex = selectedSubtitleIndex
         )
     }
+    updateAudioControlAvailability(audioTracks, selectedAudioIndex)
     logSwitchTrace(
         stage = "exo-tracks-update-end",
         message = "audioCount=${audioTracks.size} subtitleCount=${subtitleTracks.size} " +
