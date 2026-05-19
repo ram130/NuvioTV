@@ -415,7 +415,7 @@
     <string name="supporters_contributors_subtitle">Les personnes qui soutiennent Nuvio et les contributeurs qui le développent sur TV et mobile.</string>
     <string name="supporters_contributors_supporters_copy">Les soutiens et les donateurs permettent au projet de continuer à avancer, de financer l’infrastructure et de laisser la place à des fonctionnalités ambitieuses.</string>
     <string name="supporters_contributors_donate_copy">Nuvio restera gratuit et open source. Si tu souhaites soutenir le projet, tu peux aider à couvrir le temps et l’infrastructure nécessaires à son développement.</string>
-    <string name="supporters_contributors_donate_button">Faire un don à Nuvio</string>
+    <string name="supporters_contributors_donate_button">Faire un don</string>
     <string name="supporters_contributors_qr_title">Scanner pour faire un don</string>
     <string name="supporters_contributors_qr_subtitle">Ouvre le lien sur ton téléphone et soutiens Nuvio via Ko-fi.</string>
     <string name="supporters_contributors_qr_hint">Pointe ta caméra vers le code QR ou utilise le bouton ci-dessous.</string>
