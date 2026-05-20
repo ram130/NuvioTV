@@ -2293,7 +2293,7 @@
     <string name="layout_cw_sort_mode">Ordre de tri</string>
     <string name="layout_cw_sort_mode_sub">Comment les éléments Continuer à regarder sont organisés</string>
     <string name="layout_cw_sort_default">Par défaut</string>
-    <string name="layout_cw_sort_default_desc">Trier tous les éléments par récence</string>
+    <string name="layout_cw_sort_default_desc">Trier les éléments du plus récent au plus ancien</string>
     <string name="layout_cw_sort_streaming">Style streaming</string>
     <string name="layout_cw_sort_streaming_desc">Les éléments sortis d’abord, ceux à venir à la fin</string>
 
