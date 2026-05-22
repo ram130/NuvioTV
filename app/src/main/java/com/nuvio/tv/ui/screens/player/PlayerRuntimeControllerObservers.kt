@@ -6,6 +6,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import com.nuvio.tv.data.local.FrameRateMatchingMode
 import com.nuvio.tv.domain.model.Subtitle
+import com.nuvio.tv.domain.model.enabledAddons
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -34,6 +35,7 @@ internal suspend fun PlayerRuntimeController.fetchAddonSubtitlesNow(
 ): List<Subtitle> {
     val request = buildSubtitleFetchRequest() ?: return emptyList()
     val installedAddonOrder = addonRepository.getInstalledAddons().firstOrNull()
+        ?.enabledAddons()
         ?.map { it.displayName }
         .orEmpty()
     _uiState.update { it.copy(installedSubtitleAddonOrder = installedAddonOrder) }
