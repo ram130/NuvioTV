@@ -52,6 +52,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import androidx.compose.ui.platform.LocalContext
 import com.nuvio.tv.domain.model.Stream
+import com.nuvio.tv.domain.model.StreamDebridCacheState
 import com.nuvio.tv.ui.components.SourceChipItem
 import com.nuvio.tv.ui.components.SourceChipStatus
 import com.nuvio.tv.ui.components.SourceStatusFilterChip
@@ -150,6 +151,14 @@ internal fun StreamItem(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    stream.debridCacheStatus?.let { status ->
+                        when (status.state) {
+                            StreamDebridCacheState.CACHED -> StreamTypeChip(text = stringResource(R.string.stream_type_debrid_cached), color = NuvioColors.Primary)
+                            StreamDebridCacheState.CHECKING -> StreamTypeChip(text = stringResource(R.string.stream_type_debrid_checking), color = NuvioColors.Secondary)
+                            StreamDebridCacheState.UNKNOWN -> StreamTypeChip(text = stringResource(R.string.stream_type_debrid_unknown), color = NuvioColors.TextSecondary)
+                            StreamDebridCacheState.NOT_CACHED -> StreamTypeChip(text = stringResource(R.string.stream_type_debrid_not_cached), color = NuvioColors.Error)
+                        }
+                    }
                     if (stream.isTorrent()) {
                         StreamTypeChip(text = stringResource(R.string.stream_type_torrent), color = NuvioColors.Secondary)
                     }

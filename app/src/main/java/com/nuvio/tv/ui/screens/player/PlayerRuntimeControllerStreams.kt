@@ -12,6 +12,7 @@ import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.data.local.toTrackPreference
 import com.nuvio.tv.domain.model.AddonStreams
 import com.nuvio.tv.domain.model.Stream
+import com.nuvio.tv.domain.model.StreamDebridCacheState
 import com.nuvio.tv.domain.model.Video
 import com.nuvio.tv.domain.model.enabledAddons
 import com.nuvio.tv.ui.components.SourceChipItem
@@ -47,6 +48,10 @@ internal fun PlayerRuntimeController.showEpisodesPanel() {
         loadEpisodesIfNeeded()
     }
 }
+
+private fun Stream.isReadyForDebridPreparation(): Boolean =
+    getStreamUrl().isNullOrBlank() &&
+        (isDirectDebrid() || (needsLocalDebridResolve() && debridCacheStatus?.state == StreamDebridCacheState.CACHED))
 
 internal fun PlayerRuntimeController.showSourcesPanel() {
     _uiState.update {
@@ -189,7 +194,7 @@ private fun PlayerRuntimeController.launchSourceDebridPreparationIfNeeded(
     installedAddonNames: Set<String>,
     markLaunched: () -> Unit
 ) {
-    if (launched || streams.none { it.isDirectDebrid() && it.getStreamUrl().isNullOrBlank() }) {
+    if (launched || streams.none { it.isReadyForDebridPreparation() }) {
         return
     }
     markLaunched()
@@ -518,43 +523,25 @@ internal fun PlayerRuntimeController.switchToSourceStream(stream: Stream) {
         return
     }
 
-    // Torrent streams: delegate to torrent-aware path
     if (stream.isTorrent()) {
-        val infoHash = stream.infoHash ?: return
-        stopTorrentStream()
-        nextEpisodeAutoPlayJob?.cancel()
-        nextEpisodeAutoPlayJob = null
-        flushPlaybackSnapshotForSwitchOrExit()
-        resetLoadingOverlayForNewStream()
-        releasePlayer(flushPlaybackState = false)
-        hasRetriedCurrentStreamAfter416 = false
-        errorRetryCount = 0
-        subtitleDisabledByPersistedPreference = false
-        subtitleAddonRestoredByPersistedPreference = false
-        pendingRestoredAddonSubtitle = null
-        lastSavedPosition = 0L
-        _uiState.update {
-            it.copy(
-                isBuffering = true,
-                error = null,
-                currentStreamName = stream.name ?: stream.addonName,
-                currentStreamUrl = "",
-                audioTracks = emptyList(),
-                subtitleTracks = emptyList(),
-                selectedAudioTrackIndex = -1,
-                selectedSubtitleTrackIndex = -1,
-                showSourcesPanel = false,
-                isLoadingSourceStreams = false,
-                sourceStreamsError = null,
-                isTorrentStream = true
-            )
+        debridResolveJob?.cancel()
+        _uiState.update { it.copy(isLoadingSourceStreams = true, sourceStreamsError = null) }
+        debridResolveJob = scope.launch {
+            val resolved = resolveDirectDebridStreamIfNeeded(stream, currentSeason, currentEpisode)
+            debridResolveJob = null
+            if (resolved != null && !resolved.getStreamUrl().isNullOrBlank()) {
+                switchToSourceStream(resolved)
+            } else if (resolved != null) {
+                switchToTorrentSourceStream(resolved)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoadingSourceStreams = false,
+                        sourceStreamsError = context.getString(com.nuvio.tv.R.string.player_stream_error_invalid_url)
+                    )
+                }
+            }
         }
-        applyStreamMetadata(stream)
-        currentFilename = stream.behaviorHints?.filename ?: navigationArgs.filename
-        showStreamSourceIndicator(stream)
-        resetPostPlayOverlayState(clearEpisode = false)
-        launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
-        persistTorrentStreamForReuse(stream)
         return
     }
 
@@ -666,6 +653,61 @@ internal fun PlayerRuntimeController.selectEpisodesSeason(season: Int) {
             episodes = episodesForSeason
         )
     }
+}
+
+@androidx.annotation.OptIn(UnstableApi::class)
+private fun PlayerRuntimeController.switchToTorrentSourceStream(stream: Stream) {
+    val infoHash = stream.infoHash ?: return
+    stopTorrentStream()
+    nextEpisodeAutoPlayJob?.cancel()
+    nextEpisodeAutoPlayJob = null
+    flushPlaybackSnapshotForSwitchOrExit()
+    resetLoadingOverlayForNewStream()
+    releasePlayer(flushPlaybackState = false)
+    hasRetriedCurrentStreamAfter416 = false
+    errorRetryCount = 0
+    subtitleDisabledByPersistedPreference = false
+    subtitleAddonRestoredByPersistedPreference = false
+    pendingRestoredAddonSubtitle = null
+    lastSavedPosition = 0L
+    _uiState.update {
+        it.copy(
+            isBuffering = true,
+            error = null,
+            currentStreamName = stream.name ?: stream.addonName,
+            currentStreamUrl = "",
+            audioTracks = emptyList(),
+            subtitleTracks = emptyList(),
+            selectedAudioTrackIndex = -1,
+            selectedSubtitleTrackIndex = -1,
+            showSourcesPanel = false,
+            isLoadingSourceStreams = false,
+            sourceStreamsError = null,
+            isTorrentStream = true
+        )
+    }
+    applyStreamMetadata(stream)
+    currentFilename = stream.behaviorHints?.filename ?: navigationArgs.filename
+    showStreamSourceIndicator(stream)
+    resetPostPlayOverlayState(clearEpisode = false)
+    launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
+    persistTorrentStreamForReuse(stream)
+}
+
+private fun PlayerRuntimeController.switchToTorrentEpisodeStream(
+    stream: Stream,
+    forcedTargetVideo: Video?,
+    isAutoPlay: Boolean
+) {
+    val infoHash = stream.infoHash ?: return
+    consecutiveAutoPlayCount = nextConsecutiveAutoPlayCount(
+        currentCount = consecutiveAutoPlayCount,
+        isAutoPlay = isAutoPlay
+    )
+    stopTorrentStream()
+    switchToEpisodeStreamCommon(stream, forcedTargetVideo)
+    launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
+    persistTorrentStreamForReuse(stream)
 }
 
 internal fun PlayerRuntimeController.loadEpisodesIfNeeded() {
@@ -849,7 +891,7 @@ private fun PlayerRuntimeController.launchEpisodeDebridPreparationIfNeeded(
     installedAddonNames: Set<String>,
     markLaunched: () -> Unit
 ) {
-    if (launched || streams.none { it.isDirectDebrid() && it.getStreamUrl().isNullOrBlank() }) {
+    if (launched || streams.none { it.isReadyForDebridPreparation() }) {
         return
     }
     markLaunched()
@@ -943,17 +985,27 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
         return
     }
 
-    // Torrent streams: delegate to torrent-aware path
     if (stream.isTorrent()) {
-        val infoHash = stream.infoHash ?: return
-        consecutiveAutoPlayCount = nextConsecutiveAutoPlayCount(
-            currentCount = consecutiveAutoPlayCount,
-            isAutoPlay = isAutoPlay,
-        )
-        stopTorrentStream()
-        switchToEpisodeStreamCommon(stream, forcedTargetVideo)
-        launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
-        persistTorrentStreamForReuse(stream)
+        val resolveSeason = forcedTargetVideo?.season ?: _uiState.value.episodeStreamsSeason ?: currentSeason
+        val resolveEpisode = forcedTargetVideo?.episode ?: _uiState.value.episodeStreamsEpisode ?: currentEpisode
+        debridResolveJob?.cancel()
+        _uiState.update { it.copy(isLoadingEpisodeStreams = true, episodeStreamsError = null) }
+        debridResolveJob = scope.launch {
+            val resolved = resolveDirectDebridStreamIfNeeded(stream, resolveSeason, resolveEpisode)
+            debridResolveJob = null
+            if (resolved != null && !resolved.getStreamUrl().isNullOrBlank()) {
+                switchToEpisodeStream(resolved, forcedTargetVideo, isAutoPlay)
+            } else if (resolved != null) {
+                switchToTorrentEpisodeStream(resolved, forcedTargetVideo, isAutoPlay)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoadingEpisodeStreams = false,
+                        episodeStreamsError = context.getString(com.nuvio.tv.R.string.player_stream_error_invalid_url)
+                    )
+                }
+            }
+        }
         return
     }
 
@@ -1184,7 +1236,6 @@ internal suspend fun PlayerRuntimeController.resolveDirectDebridStreamIfNeeded(
     season: Int?,
     episode: Int?
 ): Stream? {
-    if (!stream.isDirectDebrid() || stream.getStreamUrl() != null) return stream
     return when (val result = directDebridResolver.resolveToPlayableStream(stream, season, episode)) {
         is DirectDebridPlayableResult.Success -> result.stream
         DirectDebridPlayableResult.MissingApiKey,

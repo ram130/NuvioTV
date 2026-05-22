@@ -3,7 +3,12 @@ package com.nuvio.tv.core.debrid
 import com.nuvio.tv.data.local.DebridSettingsDataStore
 import com.nuvio.tv.data.remote.api.TorboxApi
 import com.nuvio.tv.data.remote.dto.TorboxCloudItemDto
+import com.nuvio.tv.data.remote.dto.TorboxCachedItemDto
+import com.nuvio.tv.data.remote.dto.TorboxCheckCachedRequestDto
 import com.nuvio.tv.data.remote.dto.TorboxCreateTorrentDataDto
+import com.nuvio.tv.data.remote.dto.TorboxDeviceAuthorizationDto
+import com.nuvio.tv.data.remote.dto.TorboxDeviceTokenDto
+import com.nuvio.tv.data.remote.dto.TorboxDeviceTokenRequestDto
 import com.nuvio.tv.data.remote.dto.TorboxEnvelopeDto
 import com.nuvio.tv.data.remote.dto.TorboxTorrentDataDto
 import com.nuvio.tv.data.remote.dto.TorboxTorrentFileDto
@@ -19,7 +24,6 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Response
@@ -84,13 +88,13 @@ class TorboxDirectDebridResolverTest {
     }
 
     @Test
-    fun `torbox api intentionally has no checkcached endpoint`() {
+    fun `torbox api exposes checkcached endpoint for local torrent availability`() {
         val hasCheckCached = TorboxApi::class.java.methods.any {
             it.name.contains("checkcached", ignoreCase = true) ||
                 it.name.contains("checkCached", ignoreCase = true)
         }
 
-        assertFalse(hasCheckCached)
+        assertTrue(hasCheckCached)
     }
 
     private fun resolver(api: TorboxApi): TorboxDirectDebridResolver {
@@ -159,6 +163,26 @@ class TorboxDirectDebridResolverTest {
 
         override suspend fun getUser(authorization: String): Response<ResponseBody> {
             return Response.success("{}".toResponseBody("application/json".toMediaType()))
+        }
+
+        override suspend fun startDeviceAuthorization(
+            appName: String
+        ): Response<TorboxEnvelopeDto<TorboxDeviceAuthorizationDto>> {
+            return Response.success(TorboxEnvelopeDto(success = true, data = TorboxDeviceAuthorizationDto()))
+        }
+
+        override suspend fun redeemDeviceAuthorization(
+            body: TorboxDeviceTokenRequestDto
+        ): Response<TorboxEnvelopeDto<TorboxDeviceTokenDto>> {
+            return Response.success(TorboxEnvelopeDto(success = true, data = TorboxDeviceTokenDto()))
+        }
+
+        override suspend fun checkCached(
+            authorization: String,
+            format: String,
+            body: TorboxCheckCachedRequestDto
+        ): Response<TorboxEnvelopeDto<Map<String, TorboxCachedItemDto>>> {
+            return Response.success(TorboxEnvelopeDto(success = true, data = emptyMap()))
         }
 
         override suspend fun createTorrent(

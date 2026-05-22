@@ -7,7 +7,6 @@ import com.nuvio.tv.data.remote.api.AddonApi
 import com.nuvio.tv.data.remote.api.AniSkipApi
 import com.nuvio.tv.data.remote.api.AnimeSkipApi
 import com.nuvio.tv.data.remote.api.ArmApi
-import com.nuvio.tv.data.remote.api.DirectDebridStreamApi
 import com.nuvio.tv.data.remote.api.DonationsApi
 import com.nuvio.tv.data.remote.api.GitHubReleaseApi
 import com.nuvio.tv.data.remote.api.TraktApi
@@ -225,19 +224,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @Named("directDebrid")
-    fun provideDirectDebridRetrofit(
-        @Named("directDebrid") okHttpClient: OkHttpClient,
-        moshi: Moshi
-    ): Retrofit =
-        Retrofit.Builder()
-            .baseUrl("https://placeholder.nuvio.tv/")
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-
-    @Provides
-    @Singleton
     @Named("tmdb")
     fun provideTmdbRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit =
         Retrofit.Builder()
@@ -263,11 +249,6 @@ object NetworkModule {
     @Singleton
     fun provideAddonApi(retrofit: Retrofit): AddonApi =
         retrofit.create(AddonApi::class.java)
-
-    @Provides
-    @Singleton
-    fun provideDirectDebridStreamApi(@Named("directDebrid") retrofit: Retrofit): DirectDebridStreamApi =
-        retrofit.create(DirectDebridStreamApi::class.java)
 
     @Provides
     @Singleton
