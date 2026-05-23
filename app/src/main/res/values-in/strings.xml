@@ -931,9 +931,8 @@
     <string name="debrid_disconnect">Terputus</string>
     <string name="debrid_device_auth_connected">%1$s telah terhubung di perangkat ini.</string>
     <string name="debrid_device_auth_starting">Memulai sign-in dengan aman...</string>
-    <string name="debrid_device_auth_instructions">Buka browser dan masukkan kode ini untuk untuk mengizinkan Nuvio.</string>
+    <string name="debrid_device_auth_instructions">Scan QR dan masukkan kode ini untuk mengizinkan Nuvio.</string>
     <string name="debrid_device_auth_code_copied">Kode tersalin.</string>
-    <string name="debrid_device_auth_open">Buka browser</string>
     <string name="debrid_device_auth_waiting">Menunggu persetujuan...</string>
     <string name="debrid_device_auth_failed">Tidak dapat memulai sign-in.</string>
     <string name="debrid_device_auth_missing_configuration">Metode sign-in ini tidak dikonfigurasi dalam rilis ini.</string>
