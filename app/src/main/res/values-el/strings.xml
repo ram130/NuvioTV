@@ -782,7 +782,7 @@
     <string name="layout_classic_focus_gradient_sub">Ανάμειξη χρωμάτων artwork στη δεξιά πλευρά της κλασικής αρχικής.</string>
     <string name="layout_show_hero">Εμφάνιση ηρωικής ενότητας</string>
     <string name="layout_show_hero_sub">Εμφάνιση καρουζέλ ηρωικής ενότητας στην κορυφή της αρχικής οθόνης.</string>
-    <string name="layout_show_discover">Εμφάνιση Discover στην Αναζήτηση</string>
+    <string name="layout_show_discover">Εμφάνιση/Απόκρυψη Ανακάλυψης</string>
     <string name="layout_show_discover_sub">Εμφάνιση ενότητας περιήγησης όταν η αναζήτηση είναι κενή.</string>
     <string name="layout_discover_location_action">Θέση Ανακάλυψης</string>
     <string name="layout_discover_location_dialog_title">Θέση Ανακάλυψης</string>
@@ -1476,7 +1476,7 @@
     <string name="search_placeholder">Αναζήτηση ταινιών &amp; σειρών</string>
     <string name="search_start_title">Ξεκινήστε την αναζήτηση</string>
     <string name="search_start_subtitle">Εισάγετε τουλάχιστον 2 χαρακτήρες</string>
-    <string name="search_start_subtitle_no_discover">Το Discover είναι απενεργοποιημένο. Εισάγετε τουλάχιστον 2 χαρακτήρες</string>
+    <string name="search_start_subtitle_no_discover">Η Ανακάλυψη είναι απενεργοποιημένη. Εισάγετε τουλάχιστον 2 χαρακτήρες</string>
     <string name="search_recent_title">Πρόσφατες αναζητήσεις</string>
     <string name="search_recent_clear">Εκκαθάριση ιστορικού</string>
     <string name="search_voice_no_speech">Δεν ανιχνεύτηκε ομιλία. Δοκιμάστε ξανά.</string>
@@ -1558,7 +1558,7 @@
 
     <!-- AccountSettingsContent -->
     <string name="account_loading">Φόρτωση…</string>
-    <string name="account_sync_description">Συγχρονίστε τη βιβλιοθήκη, την πρόοδο παρακολούθησης, τα πρόσθετα και τα πρόσθετα σε όλες τις συσκευές.</string>
+    <string name="account_sync_description">Συγχρονίστε τη βιβλιοθήκη, την πρόοδο παρακολούθησης και τα πρόσθετά σας σε όλες τις συσκευές.</string>
     <string name="account_sync_restart_note">Ο συγχρονισμός δεν είναι πραγματικού χρόνου σε ενεργές συσκευές. Επανεκκινήστε αυτή τη συσκευή μετά τη σύνδεση ή για να λάβετε αλλαγές που έγιναν αλλού.</string>
     <string name="account_signin_qr_title">Σύνδεση με QR</string>
     <string name="account_signin_qr_subtitle">Σαρώστε QR code και ολοκληρώστε τη σύνδεση με email στο κινητό σας</string>
@@ -1603,7 +1603,7 @@
     <!-- SyncCodeClaimScreen -->
     <string name="sync_claim_title">Σύνδεση συσκευής</string>
     <string name="sync_claim_subtitle">Εισάγετε τον κωδικό συγχρονισμού και το PIN από την άλλη συσκευή σας για σύνδεση αυτής της συσκευής.</string>
-    <string name="sync_claim_success">Η συσκευή συνδέθηκε επιτυχώς! Τα πρόσθετα και τα πρόσθετα σας θα συγχρονίζονται πλέον.</string>
+    <string name="sync_claim_success">Η συσκευή συνδέθηκε επιτυχώς! Τα πρόσθετά σας θα συγχρονίζονται πλέον.</string>
     <string name="sync_claim_done">Έτοιμο</string>
     <string name="sync_claim_code_label">Κωδικός συγχρονισμού</string>
     <string name="sync_claim_code_placeholder">XXXX-XXXX-XXXX-XXXX-XXXX</string>
@@ -1615,10 +1615,10 @@
     <string name="plugin_repositories_section">Αποθετήρια (%1$d)</string>
     <string name="plugin_providers_section">Πάροχοι (%1$d)</string>
     <string name="plugin_title">Πρόσθετα</string>
-    <string name="plugin_subtitle">Διαχείριση τοπικών scrapers και παρόχων</string>
-    <string name="plugin_enable_plugins_title">Ενεργοποίηση παρόχων plugins καθολικά</string>
-    <string name="plugin_enable_plugins_subtitle">Χρήση παρόχων plugin κατά την αναζήτηση ροών</string>
-    <string name="plugin_group_by_repository_title">Ομαδοποίηση παρόχων plugin ανά αποθετήριο</string>
+    <string name="plugin_subtitle">Διαχείριση τοπικών ανιχνευτών και παρόχων</string>
+    <string name="plugin_enable_plugins_title">Καθολική ενεργοποίηση παρόχων πρόσθετων</string>
+    <string name="plugin_enable_plugins_subtitle">Χρήση παρόχων πρόσθετων κατά την αναζήτηση ροών</string>
+    <string name="plugin_group_by_repository_title">Ομαδοποίηση παρόχων πρόσθετων ανά αποθετήριο</string>
     <string name="plugin_group_by_repository_subtitle">Στις Ροές, εμφάνιση ενός παρόχου ανά αποθετήριο αντί για έναν ανά πηγή</string>
     <string name="plugin_add_repository">Προσθήκη αποθετηρίου</string>
     <string name="plugin_add_btn">Προσθήκη</string>
@@ -1683,7 +1683,7 @@
     <string name="update_unknown_sources">Επιτρέψτε εγκαταστάσεις από άγνωστες πηγές για να συνεχίσετε.</string>
     <!-- AccountScreen -->
     <string name="account_title">Λογαριασμός</string>
-    <string name="account_sign_in_description">Συνδεθείτε για να συγχρονίσετε τη βιβλιοθήκη, την πρόοδο, τα πρόσθετα και τα πρόσθετα σε όλες τις συσκευές. Ο συγχρονισμός βιβλιοθήκης χρησιμοποιεί Nuvio Sync όταν δεν είναι συνδεδεμένο το Trakt, ενώ η πρόοδος μπορεί να χρησιμοποιεί είτε Trakt είτε Nuvio Sync.</string>
+    <string name="account_sign_in_description">Συνδεθείτε για να συγχρονίσετε τη βιβλιοθήκη, την πρόοδο και τα πρόσθετά σας σε όλες τις συσκευές. Ο συγχρονισμός βιβλιοθήκης χρησιμοποιεί Nuvio Sync όταν δεν είναι συνδεδεμένο το Trakt, ενώ η πρόοδος μπορεί να χρησιμοποιεί είτε Trakt είτε Nuvio Sync.</string>
     <string name="account_sync_code_title">Κωδικός συγχρονισμού</string>
     <string name="account_sync_code_description">Συγχρονισμός συσκευών χωρίς δημιουργία λογαριασμού.</string>
     <string name="account_linked_devices">Συνδεδεμένες συσκευές (%1$d)</string>
@@ -1706,7 +1706,7 @@
     <string name="discover_select_catalog">Επιλογή</string>
     <string name="discover_genre_default">Προεπιλογή</string>
     <string name="discover_empty_no_catalog_title">Επιλέξτε κατάλογο</string>
-    <string name="discover_empty_no_catalog_subtitle">Επιλέξτε κατάλογο Discover για περιήγηση</string>
+    <string name="discover_empty_no_catalog_subtitle">Επιλέξτε κατάλογο Ανακάλυψης για περιήγηση</string>
     <string name="discover_empty_no_content_title">Δεν βρέθηκε περιεχόμενο</string>
     <string name="discover_empty_no_content_subtitle">Δοκιμάστε διαφορετικό είδος ή κατάλογο</string>
 
@@ -1777,8 +1777,8 @@
     <!-- Search -->
     <string name="search_no_results_title">Δεν υπάρχουν αποτελέσματα</string>
     <string name="search_no_results_subtitle">Δοκιμάστε αναζήτηση με διαφορετικές λέξεις-κλειδιά</string>
-    <string name="discover_disabled_title">Το Discover είναι απενεργοποιημένο</string>
-    <string name="discover_disabled_subtitle">Ενεργοποιήστε το Search Discover στις ρυθμίσεις</string>
+    <string name="discover_disabled_title">Η Ανακάλυψη είναι απενεργοποιημένη</string>
+    <string name="discover_disabled_subtitle">Ενεργοποιήστε την Ανακάλυψη στις ρυθμίσεις διάταξης</string>
 
     <!-- Library -->
     <string name="library_list_create_dialog_title">Δημιουργία λίστας</string>
@@ -1867,7 +1867,7 @@
     <string name="cd_episodes">Επεισόδια</string>
     <string name="cd_playback_speed">Ταχύτητα αναπαραγωγής</string>
     <string name="cd_aspect_ratio">Αναλογία εικόνας</string>
-    <string name="cd_open_external_player">Άνοιγμα σε εξωτερικό player</string>
+    <string name="cd_open_external_player">Άνοιγμα σε εξωτερικό πρόγραμμα αναπαραγωγής</string>
     <string name="cd_stream_info">Πληροφορίες ροής</string>
     <string name="cd_more_actions">Περισσότερες ενέργειες</string>
     <string name="cd_close_more_actions">Κλείσιμο περισσότερων ενεργειών</string>
@@ -1891,7 +1891,7 @@
     <string name="cd_trakt_logo">Λογότυπο Trakt</string>
     <string name="cd_trakt_qr">QR ενεργοποίησης Trakt</string>
     <string name="cd_imdb">IMDb</string>
-    <string name="cd_open_discover">Άνοιγμα Discover</string>
+    <string name="cd_open_discover">Άνοιγμα Ανακάλυψης</string>
     <string name="cd_voice_search">Φωνητική αναζήτηση</string>
     <string name="cd_donation_qr">Κωδικός QR δωρεάς</string>
     <string name="cd_contributor_qr">Κωδικός QR υποστήριξης συνεισφερόντων</string>
