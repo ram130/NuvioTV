@@ -462,16 +462,26 @@ class StreamScreenViewModel @Inject constructor(
                                 if (resolvedAutoPlayTarget) {
                                     autoSelectTriggered = true
                                 } else if (directAutoPlayFlowEnabledForSession && !isUnlimitedTimeout) {
-                                    // Bounded/instant timeout: no match found
-                                    // after full select → show stream picker.
-                                    autoPlayHandledForSession = true
-                                    directAutoPlayFlowEnabledForSession = false
-                                    updateUiStateIfChanged {
-                                        it.copy(
-                                            isDirectAutoPlayFlow = false,
-                                            showDirectAutoPlayOverlay = false,
-                                            directAutoPlayMessage = null
-                                        )
+                                    // Bounded/instant timeout: no match found.
+                                    // If there are still torrents with a pending
+                                    // debrid cache check, wait for the next emission
+                                    // (which will carry the CACHED/NOT_CACHED result)
+                                    // instead of showing the picker immediately.
+                                    val hasCheckingTorrents = result.data.any { group ->
+                                        group.streams.any { s ->
+                                            s.isTorrent() && s.debridCacheStatus?.state == com.nuvio.tv.domain.model.StreamDebridCacheState.CHECKING
+                                        }
+                                    }
+                                    if (!hasCheckingTorrents) {
+                                        autoPlayHandledForSession = true
+                                        directAutoPlayFlowEnabledForSession = false
+                                        updateUiStateIfChanged {
+                                            it.copy(
+                                                isDirectAutoPlayFlow = false,
+                                                showDirectAutoPlayOverlay = false,
+                                                directAutoPlayMessage = null
+                                            )
+                                        }
                                     }
                                 }
                             } else if (directFlowActive && persistedBingeGroup != null) {
@@ -581,14 +591,23 @@ class StreamScreenViewModel @Inject constructor(
             // For unlimited: keep the overlay — we continue checking as more
             // addons respond until the hard timeout below.
             if (directFlowActive && !resolvedAutoPlayTarget && lastSuccessData != null && !isUnlimitedTimeout) {
-                autoPlayHandledForSession = true
-                directAutoPlayFlowEnabledForSession = false
-                updateUiStateIfChanged {
-                    it.copy(
-                        isDirectAutoPlayFlow = false,
-                        showDirectAutoPlayOverlay = false,
-                        directAutoPlayMessage = null
-                    )
+                // If torrents are still pending cache check, the next emission
+                // will carry the result — don't tear down yet.
+                val hasCheckingTorrents = lastSuccessData?.any { group ->
+                    group.streams.any { s ->
+                        s.isTorrent() && s.debridCacheStatus?.state == com.nuvio.tv.domain.model.StreamDebridCacheState.CHECKING
+                    }
+                } == true
+                if (!hasCheckingTorrents) {
+                    autoPlayHandledForSession = true
+                    directAutoPlayFlowEnabledForSession = false
+                    updateUiStateIfChanged {
+                        it.copy(
+                            isDirectAutoPlayFlow = false,
+                            showDirectAutoPlayOverlay = false,
+                            directAutoPlayMessage = null
+                        )
+                    }
                 }
             }
 

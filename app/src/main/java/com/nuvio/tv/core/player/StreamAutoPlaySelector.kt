@@ -31,6 +31,8 @@ object StreamAutoPlaySelector {
     }
 
     private fun isPlayable(stream: Stream): Boolean {
+        // External URL streams (e.g. error pages, web links) are not playable.
+        if (stream.isExternal()) return false
         when (stream.debridCacheStatus?.state) {
             StreamDebridCacheState.CHECKING,
             StreamDebridCacheState.NOT_CACHED,
