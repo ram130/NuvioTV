@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.components
 
+import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,6 +44,7 @@ fun NuvioDialog(
     content: @Composable ColumnScope.() -> Unit
 ) {
     var suppressNextKeyUp by remember { mutableStateOf(suppressFirstKeyUp) }
+    val openedAtMillis = remember { SystemClock.uptimeMillis() }
     val maxDialogHeight = (LocalConfiguration.current.screenHeightDp.dp - 48.dp).coerceAtLeast(320.dp)
 
     Dialog(onDismissRequest = onDismiss) {
@@ -59,7 +61,7 @@ fun NuvioDialog(
                     if (suppressNextKeyUp && native.action == AndroidKeyEvent.ACTION_UP) {
                         if (isSelectKey(native.keyCode) || native.keyCode == AndroidKeyEvent.KEYCODE_MENU) {
                             suppressNextKeyUp = false
-                            return@onPreviewKeyEvent true
+                            return@onPreviewKeyEvent native.downTime <= openedAtMillis
                         }
                     }
                     false
