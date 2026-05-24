@@ -768,8 +768,7 @@ fun ModernHomeContent(
                     when {
                         isScrolling && stableHasPreview -> stable
                         isScrolling && !stableHasPreview && liveHasPreview -> currentLive
-                        isRapidNav -> stable?.copy(preview = null, enrichmentActive = false)
-                            ?: currentLive.copy(preview = null, enrichmentActive = false)
+                        isRapidNav -> currentLive.copy(preview = null, enrichmentActive = false)
                         else -> currentLive
                     }
                 }.collect { currentStable ->
@@ -802,11 +801,13 @@ fun ModernHomeContent(
 
             val currentLiveHeroSceneStateUpdated by rememberUpdatedState(liveHeroSceneState.value)
             val isScrollInProgressUpdated by rememberUpdatedState(verticalRowListState.isScrollInProgress)
+            val isRapidHorizontalNavUpdated by rememberUpdatedState(isRapidHorizontalNav.value)
 
             val heroSceneStateLambda = remember {
                 {
                     val currentLive = currentLiveHeroSceneStateUpdated
                     val isScrolling = isScrollInProgressUpdated
+                    val isRapidNav = isRapidHorizontalNavUpdated
                     val stable = stableHeroSceneStateRef.value
                     val stableHasPreview = stable?.preview?.title?.isNotBlank() == true
 
@@ -814,6 +815,8 @@ fun ModernHomeContent(
                         // During vertical scroll: freeze stable to avoid flashing
                         // transient addon data before enrichment completes
                         isScrolling && stableHasPreview -> stable!!
+                        // During rapid horizontal nav: freeze to avoid backdrop flashing
+                        isRapidNav && stable != null -> stable
                         // Normal: show live state
                         else -> currentLive
                     }
@@ -826,6 +829,7 @@ fun ModernHomeContent(
             // will gate the preview through enrichmentActive in previewProvider.
             val latestLiveForStable = liveHeroSceneState.value
             if (!verticalRowListState.isScrollInProgress &&
+                !isRapidHorizontalNav.value &&
                 latestLiveForStable.preview?.title?.isNotBlank() == true &&
                 !latestLiveForStable.enrichmentActive &&
                 stableHeroSceneStateRef.value?.preview != latestLiveForStable.preview) {
@@ -837,24 +841,6 @@ fun ModernHomeContent(
             }
             val isFullScreenLambda = remember {
                 { isFullScreenState.value }
-            }
-
-            LaunchedEffect(verticalRowListState, liveHeroSceneState) {
-                snapshotFlow {
-                    val currentLive = liveHeroSceneState.value
-                    val isScrolling = verticalRowListState.isScrollInProgress
-                    val isRapidNav = isRapidHorizontalNav.value
-                    val stable = stableHeroSceneStateRef.value
-                    when {
-                        // During vertical scroll, freeze backdrop
-                        isScrolling && stable?.heroBackdrop != null -> stable.heroBackdrop
-                        // During rapid horizontal nav, freeze backdrop too
-                        isRapidNav && stable?.heroBackdrop != null -> stable.heroBackdrop
-                        else -> currentLive.heroBackdrop
-                    }
-                }.collect { backdrop ->
-                    HeroBackdropState.update(backdrop)
-                }
             }
 
             val localDensity = LocalDensity.current
