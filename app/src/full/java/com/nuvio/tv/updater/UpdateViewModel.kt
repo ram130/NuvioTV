@@ -43,8 +43,7 @@ class UpdateViewModel @Inject constructor(
     val uiState: StateFlow<UpdateUiState> = _uiState.asStateFlow()
 
     init {
-        // Lightweight check on app start.
-        checkForUpdates(force = false, showNoUpdateFeedback = false)
+        // Auto-check on app start disabled. Manual check from the About screen still works.
     }
 
     fun checkForUpdates(force: Boolean, showNoUpdateFeedback: Boolean) {
