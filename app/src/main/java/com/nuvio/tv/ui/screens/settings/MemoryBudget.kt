@@ -53,9 +53,10 @@ object MemoryBudget {
             rawBudgetMb.coerceAtMost((maxHeapMb - LOW_HEAP_RESERVE_MB).toInt()).coerceAtLeast(MIN_BUFFER_MB)
         else rawBudgetMb
 
-    /** Half the raw budget for DV7 (off-heap libdovi headroom); never above the playback budget. */
+    // DV7 conversion headroom: a third of the raw budget on low-RAM, half on high-RAM; never above budget.
     val conversionBudgetMb: Int =
-        (rawBudgetMb / 2).coerceAtMost(budgetMb).coerceAtLeast(MIN_BUFFER_MB)
+        (if (isLowRamTier) rawBudgetMb / 3 else rawBudgetMb / 2)
+            .coerceAtMost(budgetMb).coerceAtLeast(MIN_BUFFER_MB)
 
     fun effectiveBufferMb(stored: Int): Int =
         if (stored > 0) stored else defaultBufferSizeMb

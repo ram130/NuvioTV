@@ -188,13 +188,7 @@ Java_com_nuvio_tv_core_player_DoviBridge_nativeConvertDv7RpuToDv81(
     );
     dovi_data_free(out_data);
     dovi_rpu_free(rpu);
-
-    LOGI(
-        "nativeConvertDv7RpuToDv81 converted %d bytes -> %d bytes (mode=%u)",
-        static_cast<int>(len),
-        static_cast<int>(env->GetArrayLength(out)),
-        static_cast<unsigned int>(conversion_mode)
-    );
+    // No per-frame log here: it runs once per frame and floods logcat.
     return out;
 #else
     LOGI("nativeConvertDv7RpuToDv81 called in stub mode; returning null");

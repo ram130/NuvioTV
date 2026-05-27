@@ -154,19 +154,30 @@ public class MatroskaExtractor implements Extractor {
     /**
      * Optionally rewrites an HEVC sample payload.
      *
+     * <p>Reads the first {@code sampleLength} bytes of {@code sampleLengthDelimitedData}. A non-null
+     * result is the transformer's reusable buffer, valid for {@link #lastTransformedSampleLength()}
+     * bytes and only until the next call; null keeps the original payload.
+     *
      * @param sampleLengthDelimitedData Sample payload in length-delimited NAL format.
+     * @param sampleLength Number of valid bytes in {@code sampleLengthDelimitedData}.
      * @param nalUnitLengthFieldLength Length field size in bytes.
      * @param blockAdditionalData Block additional payload associated with this sample.
      * @param dolbyVisionConfigBytes Track-level Dolby Vision config bytes, if available.
-     * @return Replacement sample payload in length-delimited NAL format, or null to keep original.
+     * @return Reusable buffer with the rewritten sample, or null to keep original.
      */
     @Nullable
     default byte[] transformHevcSample(
         byte[] sampleLengthDelimitedData,
+        int sampleLength,
         int nalUnitLengthFieldLength,
         @Nullable byte[] blockAdditionalData,
         @Nullable byte[] dolbyVisionConfigBytes) {
       return null;
+    }
+
+    /** Valid byte count of the buffer returned by the last {@link #transformHevcSample} call. */
+    default int lastTransformedSampleLength() {
+      return 0;
     }
 
     /**
@@ -529,6 +540,9 @@ public class MatroskaExtractor implements Extractor {
   private final ParsableByteArray encryptionSubsampleData;
   private final ParsableByteArray supplementalData;
   private @MonotonicNonNull ByteBuffer encryptionSubsampleDataBuffer;
+
+  // Reused per-sample read buffer for Dolby Vision conversion; grows to the largest sample.
+  private byte[] dolbyVisionSampleBuffer = new byte[0];
 
   private long segmentContentSize;
   private long segmentContentPosition = C.INDEX_UNSET;
@@ -2060,20 +2074,26 @@ public class MatroskaExtractor implements Extractor {
 
     if (CODEC_ID_H265.equals(track.codecId) && dolbyVisionSampleTransformer != null) {
       int remainingSampleBytes = size - sampleBytesRead;
-      byte[] sampleLengthDelimitedData = new byte[remainingSampleBytes];
+      if (dolbyVisionSampleBuffer.length < remainingSampleBytes) {
+        dolbyVisionSampleBuffer = new byte[remainingSampleBytes];
+      }
+      byte[] sampleLengthDelimitedData = dolbyVisionSampleBuffer;
       writeToTarget(input, sampleLengthDelimitedData, /* offset= */ 0, remainingSampleBytes);
       sampleBytesRead += remainingSampleBytes;
 
       byte[] payloadToWrite = sampleLengthDelimitedData;
+      int payloadLength = remainingSampleBytes;
       try {
         byte[] transformedPayload =
             dolbyVisionSampleTransformer.transformHevcSample(
                 sampleLengthDelimitedData,
+                remainingSampleBytes,
                 track.nalUnitLengthFieldLength,
                 track.pendingDolbyVisionBlockAdditionalData,
                 track.dolbyVisionConfigBytes);
         if (transformedPayload != null) {
           payloadToWrite = transformedPayload;
+          payloadLength = dolbyVisionSampleTransformer.lastTransformedSampleLength();
         }
       } catch (RuntimeException e) {
         Log.w(TAG, "DolbyVisionSampleTransformer.transformHevcSample failed: " + e.getMessage());
@@ -2082,7 +2102,7 @@ public class MatroskaExtractor implements Extractor {
       if (deferSupplementalMainSampleSizePrefix) {
         byte[] annexBSample =
             convertLengthDelimitedSampleToAnnexB(
-                payloadToWrite, track.nalUnitLengthFieldLength, track.codecId);
+                payloadToWrite, payloadLength, track.nalUnitLengthFieldLength, track.codecId);
         writeSupplementalMainSampleSizePrefix(output, annexBSample.length);
         sampleBytesWritten += 4;
         ParsableByteArray annexBData = new ParsableByteArray(annexBSample);
@@ -2091,7 +2111,7 @@ public class MatroskaExtractor implements Extractor {
       } else {
         int bytesWritten =
             writeLengthDelimitedSampleAsAnnexB(
-                output, payloadToWrite, track.nalUnitLengthFieldLength, track.codecId);
+                output, payloadToWrite, payloadLength, track.nalUnitLengthFieldLength, track.codecId);
         sampleBytesWritten += bytesWritten;
       }
     } else if (CODEC_ID_H264.equals(track.codecId) || CODEC_ID_H265.equals(track.codecId)) {
@@ -2160,6 +2180,7 @@ public class MatroskaExtractor implements Extractor {
   private int writeLengthDelimitedSampleAsAnnexB(
       TrackOutput output,
       byte[] sampleLengthDelimitedData,
+      int dataLength,
       int nalUnitLengthFieldLength,
       String codecId)
       throws ParserException {
@@ -2169,7 +2190,7 @@ public class MatroskaExtractor implements Extractor {
           /* cause= */ null);
     }
 
-    ParsableByteArray source = new ParsableByteArray(sampleLengthDelimitedData);
+    ParsableByteArray source = new ParsableByteArray(sampleLengthDelimitedData, dataLength);
     int bytesWritten = 0;
     while (source.bytesLeft() > 0) {
       if (source.bytesLeft() < nalUnitLengthFieldLength) {
@@ -2198,7 +2219,7 @@ public class MatroskaExtractor implements Extractor {
   }
 
   private byte[] convertLengthDelimitedSampleToAnnexB(
-      byte[] sampleLengthDelimitedData, int nalUnitLengthFieldLength, String codecId)
+      byte[] sampleLengthDelimitedData, int dataLength, int nalUnitLengthFieldLength, String codecId)
       throws ParserException {
     if (nalUnitLengthFieldLength <= 0 || nalUnitLengthFieldLength > 4) {
       throw ParserException.createForMalformedContainer(
@@ -2206,8 +2227,8 @@ public class MatroskaExtractor implements Extractor {
           /* cause= */ null);
     }
 
-    ParsableByteArray source = new ParsableByteArray(sampleLengthDelimitedData);
-    ByteArrayOutputStream output = new ByteArrayOutputStream(sampleLengthDelimitedData.length + 64);
+    ParsableByteArray source = new ParsableByteArray(sampleLengthDelimitedData, dataLength);
+    ByteArrayOutputStream output = new ByteArrayOutputStream(dataLength + 64);
     while (source.bytesLeft() > 0) {
       if (source.bytesLeft() < nalUnitLengthFieldLength) {
         throw ParserException.createForMalformedContainer(

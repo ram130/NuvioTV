@@ -30,6 +30,15 @@ internal class DolbyVisionMatroskaTransformer(
     private val config: DolbyVisionConversionConfig
 ) : MatroskaExtractor.DolbyVisionSampleTransformer {
 
+    private var lastTransformedLength = 0
+
+    // Reused across samples; grows to the largest frame once.
+    private val scratch = ExposedByteArrayOutputStream(64 * 1024)
+
+    private class ExposedByteArrayOutputStream(size: Int) : ByteArrayOutputStream(size) {
+        fun backingArray(): ByteArray = buf
+    }
+
     override fun onDolbyVisionBlockAdditionalData(
         blockAdditionalData: ByteArray?,
         blockAddIdType: Int,
@@ -49,8 +58,11 @@ internal class DolbyVisionMatroskaTransformer(
         // Telemetry-only seam; nothing to do.
     }
 
+    override fun lastTransformedSampleLength(): Int = lastTransformedLength
+
     override fun transformHevcSample(
         sampleLengthDelimitedData: ByteArray?,
+        sampleLength: Int,
         nalUnitLengthFieldLength: Int,
         blockAdditionalData: ByteArray?,
         dolbyVisionConfigBytes: ByteArray?
@@ -61,18 +73,30 @@ internal class DolbyVisionMatroskaTransformer(
         // DV5 signal-only unless a mode is forced in Advanced; keep the profile-5 RPU.
         if (profile == 5 && !config.convertDv5Rpu) return null
         val mode = config.conversionMode(profile)
-        val rewritten = rewriteMp4HevcSample(sample, nalUnitLengthFieldLength, mode) ?: sample
-        return if (blockAdditionalData == null) {
-            if (rewritten !== sample) rewritten else null
-        } else {
-            // `blockAdditionalData` is the pending value produced by
-            // onDolbyVisionBlockAdditionalData (already an 8.1 RPU). Re-running
-            // conversion is a no-op (libdovi returns null for non-DV7 input), so
-            // we fall back to the already-converted bytes.
-            val convertedBlockAdditional =
-                convertRpuNal(blockAdditionalData, mode) ?: blockAdditionalData
-            appendLengthDelimitedNal(rewritten, nalUnitLengthFieldLength, convertedBlockAdditional)
+        val baseChanged = rewriteMp4HevcSampleInto(sample, sampleLength, nalUnitLengthFieldLength, mode)
+
+        if (blockAdditionalData == null) {
+            return if (baseChanged) finishScratch() else null
         }
+
+        // `blockAdditionalData` is the pending value produced by onDolbyVisionBlockAdditionalData
+        // (already an 8.1 RPU). Re-running conversion is a no-op (libdovi returns null for non-DV7
+        // input), so we fall back to the already-converted bytes.
+        val convertedBlockAdditional = convertRpuNal(blockAdditionalData, mode) ?: blockAdditionalData
+        if (!baseChanged) {
+            scratch.reset()
+            scratch.write(sample, 0, sampleLength)
+        }
+        return if (appendLengthDelimitedNalToScratch(convertedBlockAdditional, nalUnitLengthFieldLength)) {
+            finishScratch()
+        } else {
+            null
+        }
+    }
+
+    private fun finishScratch(): ByteArray {
+        lastTransformedLength = scratch.size()
+        return scratch.backingArray()
     }
 
     override fun onDolbyVisionCodecString(
@@ -107,66 +131,63 @@ internal class DolbyVisionMatroskaTransformer(
         return null
     }
 
-    private fun rewriteMp4HevcSample(
+    private fun rewriteMp4HevcSampleInto(
         sample: ByteArray,
+        sampleLength: Int,
         nalUnitLengthFieldLength: Int,
         mode: Int
-    ): ByteArray? {
-        if (nalUnitLengthFieldLength !in 1..4) return null
+    ): Boolean {
+        if (nalUnitLengthFieldLength !in 1..4) return false
         var offset = 0
         var changed = false
-        val out = ByteArrayOutputStream(sample.size + 128)
-        while (offset + nalUnitLengthFieldLength <= sample.size) {
+        val out = scratch
+        out.reset()
+        while (offset + nalUnitLengthFieldLength <= sampleLength) {
             val nalSize = readLengthField(sample, offset, nalUnitLengthFieldLength)
-            if (nalSize < 0) return null
+            if (nalSize < 0) return false
             offset += nalUnitLengthFieldLength
-            if (offset + nalSize > sample.size) return null
-            val originalNal = sample.copyOfRange(offset, offset + nalSize)
-            val convertedNal = transformNalForCompatibility(originalNal, mode)
-            if (convertedNal == null) {
-                changed = true
-                offset += nalSize
-                continue
+            if (offset + nalSize > sampleLength) return false
+            val nalType = if (nalSize >= 1) nalUnitTypeAt(sample, offset) else -1
+            val layerId = nuhLayerIdAt(sample, offset, nalSize)
+            when {
+                // Enhancement-layer NAL that isn't the RPU: drop it.
+                layerId > 0 && nalType != NAL_TYPE_UNSPEC62 -> changed = true
+                // RPU NAL: copy out just this small NAL, convert, normalize layer id.
+                nalType == NAL_TYPE_UNSPEC62 -> {
+                    val rpu = sample.copyOfRange(offset, offset + nalSize)
+                    val convertedNal = normalizeNuhLayerIdToZero(convertRpuNal(rpu, mode) ?: rpu)
+                    if (convertedNal !== rpu) changed = true
+                    if (!writeLengthField(out, convertedNal.size, nalUnitLengthFieldLength)) return false
+                    out.write(convertedNal)
+                }
+                // Base-layer NAL: forward straight from the sample buffer, no copy.
+                else -> {
+                    if (!writeLengthField(out, nalSize, nalUnitLengthFieldLength)) return false
+                    out.write(sample, offset, nalSize)
+                }
             }
-            if (convertedNal !== originalNal) changed = true
-            if (!writeLengthField(out, convertedNal.size, nalUnitLengthFieldLength)) return null
-            out.write(convertedNal)
             offset += nalSize
         }
-        if (offset != sample.size) return null
-        if (!changed) return null
-        if (out.size() <= 0) return null
-        return out.toByteArray()
+        if (offset != sampleLength) return false
+        if (!changed) return false
+        return out.size() > 0
     }
 
-    private fun transformNalForCompatibility(nalPayload: ByteArray, mode: Int): ByteArray? {
-        if (nalPayload.isEmpty()) return nalPayload
-        val nalType = getNalUnitType(nalPayload)
-        val layerId = getNuhLayerId(nalPayload)
-        if (layerId > 0 && nalType != NAL_TYPE_UNSPEC62) return null
-        if (nalType != NAL_TYPE_UNSPEC62) return nalPayload
-        val converted = convertRpuNal(nalPayload, mode) ?: nalPayload
-        return normalizeNuhLayerIdToZero(converted)
-    }
-
-    private fun appendLengthDelimitedNal(
-        sampleLengthDelimited: ByteArray,
-        nalUnitLengthFieldLength: Int,
-        nalPayload: ByteArray
-    ): ByteArray? {
-        if (nalUnitLengthFieldLength !in 1..4 || nalPayload.isEmpty()) return null
+    private fun appendLengthDelimitedNalToScratch(
+        nalPayload: ByteArray,
+        nalUnitLengthFieldLength: Int
+    ): Boolean {
+        if (nalUnitLengthFieldLength !in 1..4 || nalPayload.isEmpty()) return false
         val maxNalSize = when (nalUnitLengthFieldLength) {
             1 -> 0xFF
             2 -> 0xFFFF
             3 -> 0xFFFFFF
             else -> Int.MAX_VALUE
         }
-        if (nalPayload.size > maxNalSize) return null
-        val out = ByteArrayOutputStream(sampleLengthDelimited.size + nalUnitLengthFieldLength + nalPayload.size)
-        out.write(sampleLengthDelimited)
-        if (!writeLengthField(out, nalPayload.size, nalUnitLengthFieldLength)) return null
-        out.write(nalPayload)
-        return out.toByteArray()
+        if (nalPayload.size > maxNalSize) return false
+        if (!writeLengthField(scratch, nalPayload.size, nalUnitLengthFieldLength)) return false
+        scratch.write(nalPayload)
+        return true
     }
 
     private fun normalizeDolbyVisionCodecString(codecs: String?): String? {
@@ -201,8 +222,15 @@ internal class DolbyVisionMatroskaTransformer(
         return parts[1].toIntOrNull()
     }
 
-    private fun getNalUnitType(nalPayload: ByteArray): Int =
-        (nalPayload[0].toInt() ushr 1) and 0x3F
+    private fun nalUnitTypeAt(sample: ByteArray, offset: Int): Int =
+        (sample[offset].toInt() ushr 1) and 0x3F
+
+    private fun nuhLayerIdAt(sample: ByteArray, offset: Int, nalSize: Int): Int {
+        if (nalSize < 2) return 0
+        val b0 = sample[offset].toInt() and 0x01
+        val b1 = sample[offset + 1].toInt() and 0xF8
+        return (b0 shl 5) or (b1 ushr 3)
+    }
 
     private fun getNuhLayerId(nalPayload: ByteArray): Int {
         if (nalPayload.size < 2) return 0

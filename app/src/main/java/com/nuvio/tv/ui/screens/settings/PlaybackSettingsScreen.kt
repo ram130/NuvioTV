@@ -304,7 +304,6 @@ fun PlaybackSettingsContent(
                 },
                 onSetParallelNetworkEnabled = { enabled ->
                     coroutineScope.launch { viewModel.setParallelNetworkEnabled(enabled) }
-                    if (enabled) memoryUsageTrigger++
                 },
                 onSetSubtitleSize = { newSize -> coroutineScope.launch { viewModel.setSubtitleSize(newSize) } },
                 onSetSubtitleVerticalOffset = { newOffset -> coroutineScope.launch { viewModel.setSubtitleVerticalOffset(newOffset) } },

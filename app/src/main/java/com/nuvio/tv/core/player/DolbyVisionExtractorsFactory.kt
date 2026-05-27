@@ -335,15 +335,24 @@ private class DolbyVisionTrackOutput(
             }
             val nalStart = pos + lengthFieldLength
             if (nalSize <= 0 || nalStart + nalSize > sample.size) return null
-            val nal = sample.copyOfRange(nalStart, nalStart + nalSize)
-            val transformed = transformNal(nal)
-            if (transformed == null) {
-                // Drop this NAL (enhancement layer).
-                changed = true
-            } else {
-                if (transformed !== nal) changed = true
-                writeLengthPrefix(out, transformed.size, lengthFieldLength)
-                out.write(transformed, 0, transformed.size)
+            val nalType = nalUnitTypeAt(sample, nalStart)
+            val layerId = nuhLayerIdAt(sample, nalStart, nalSize)
+            when {
+                // Enhancement-layer NAL that isn't the RPU: drop it.
+                layerId > 0 && nalType != NAL_TYPE_DV_RPU -> changed = true
+                // RPU NAL: copy out just this small NAL, convert, normalize layer id.
+                nalType == NAL_TYPE_DV_RPU -> {
+                    val nal = sample.copyOfRange(nalStart, nalStart + nalSize)
+                    val transformed = normalizeNuhLayerIdToZero(convertDvRpu(nal) ?: nal)
+                    if (transformed !== nal) changed = true
+                    writeLengthPrefix(out, transformed.size, lengthFieldLength)
+                    out.write(transformed, 0, transformed.size)
+                }
+                // Base-layer NAL: forward straight from the sample buffer, no copy.
+                else -> {
+                    writeLengthPrefix(out, nalSize, lengthFieldLength)
+                    out.write(sample, nalStart, nalSize)
+                }
             }
             pos = nalStart + nalSize
         }
@@ -368,14 +377,22 @@ private class DolbyVisionTrackOutput(
             if (payloadOffset >= next) {
                 out.write(sample, start, next - start)
             } else {
-                val nal = sample.copyOfRange(payloadOffset, next)
-                val transformed = transformNal(nal)
-                if (transformed == null) {
-                    changed = true // drop EL NAL
-                } else {
-                    if (transformed !== nal) changed = true
-                    out.write(sample, start, scLen)
-                    out.write(transformed, 0, transformed.size)
+                val nalSize = next - payloadOffset
+                val nalType = nalUnitTypeAt(sample, payloadOffset)
+                val layerId = nuhLayerIdAt(sample, payloadOffset, nalSize)
+                when {
+                    // Enhancement-layer NAL that isn't the RPU: drop it.
+                    layerId > 0 && nalType != NAL_TYPE_DV_RPU -> changed = true
+                    // RPU NAL: copy out just this small NAL, convert, normalize layer id.
+                    nalType == NAL_TYPE_DV_RPU -> {
+                        val nal = sample.copyOfRange(payloadOffset, next)
+                        val transformed = normalizeNuhLayerIdToZero(convertDvRpu(nal) ?: nal)
+                        if (transformed !== nal) changed = true
+                        out.write(sample, start, scLen)
+                        out.write(transformed, 0, transformed.size)
+                    }
+                    // Base-layer NAL: forward start code + payload straight from the buffer.
+                    else -> out.write(sample, start, next - start)
                 }
             }
             scan = next
@@ -384,20 +401,7 @@ private class DolbyVisionTrackOutput(
         return if (changed) out.toByteArray() else sample
     }
 
-    /**
-     * Returns the NAL to emit: the (possibly RPU-rewritten) NAL, or null to drop
-     * it (enhancement-layer NAL that isn't the RPU).
-     */
-    private fun transformNal(nal: ByteArray): ByteArray? {
-        if (nal.isEmpty()) return nal
-        val nalType = (nal[0].toInt() ushr 1) and 0x3F
-        val layerId = nuhLayerId(nal)
-        if (layerId > 0 && nalType != NAL_TYPE_DV_RPU) {
-            return null // drop enhancement-layer NAL
-        }
-        if (nalType != NAL_TYPE_DV_RPU) {
-            return nal // pass non-RPU base-layer NAL through
-        }
+    private fun convertDvRpu(nal: ByteArray): ByteArray? {
         val mode = config.conversionMode(profile)
         var converted = DoviBridge.convertDv7RpuToDv81(nal, mode)?.takeIf { it.isNotEmpty() }
         if (converted != null) {
@@ -406,11 +410,21 @@ private class DolbyVisionTrackOutput(
             converted = DoviBridge.convertDv7RpuToDv81(nal, 1)?.takeIf { it.isNotEmpty() }
             if (converted != null) DolbyVisionConversionStats.recordConversionMode(1)
         }
-        return normalizeNuhLayerIdToZero(converted ?: nal)
+        return converted
     }
 
     private companion object {
         const val NAL_TYPE_DV_RPU = 62
+
+        fun nalUnitTypeAt(data: ByteArray, offset: Int): Int =
+            (data[offset].toInt() ushr 1) and 0x3F
+
+        fun nuhLayerIdAt(data: ByteArray, offset: Int, nalSize: Int): Int {
+            if (nalSize < 2) return 0
+            val b0 = data[offset].toInt() and 0x01
+            val b1 = data[offset + 1].toInt() and 0xF8
+            return (b0 shl 5) or (b1 ushr 3)
+        }
 
         fun parseDvProfile(codecs: String?): Int? {
             if (codecs.isNullOrBlank()) return null
