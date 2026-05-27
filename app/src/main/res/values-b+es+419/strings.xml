@@ -975,6 +975,7 @@
     <string name="debrid_stream_codec_h264">H.264 / AVC</string>
     <string name="debrid_stream_codec_hevc">HEVC / H.265</string>
     <string name="debrid_stream_codec_av1">AV1</string>
+    <string name="debrid_formatter_title">Editor web</string>
 
         <!-- Debrid stream filter dialogs (per-resolution / quality / size / multi-choice pickers) -->
     <string name="debrid_stream_per_resolution_limit_title">Límite por resolución</string>
@@ -1008,7 +1009,6 @@
     <string name="debrid_stream_release_groups_excluded">Grupos de lanzamiento excluidos</string>
     <string name="debrid_stream_release_groups_input_subtitle">Ingresa un grupo por línea.</string>
 
-    <string name="debrid_formatter_title">Editor web</string>
     <string name="debrid_formatter_subtitle">Configura la visualización de fuentes, filtros y ordenamiento desde otro dispositivo.</string>
     <string name="debrid_formatter_configure">Abrir editor web</string>
     <string name="debrid_formatter_reset_title">Restablecer formato</string>
