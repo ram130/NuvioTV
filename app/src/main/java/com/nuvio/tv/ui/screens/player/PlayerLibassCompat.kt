@@ -101,9 +101,11 @@ private fun ExtractorsFactory.withAssMkvSupportCompat(
     return ExtractorsFactory {
         val extractors = createExtractors()
         extractors.forEachIndexed { index, extractor ->
-            // The DV7 factory swaps in a vendored MatroskaExtractor; libass needs the ASS-aware
-            // one for MKV, so replace either. DV7-MKV conversion yields to ASS while libass is on.
-            if (extractor is MatroskaExtractor || extractor is DvMatroskaExtractor) {
+            // The DV7 factory swaps in a vendored MatroskaExtractor for DV conversion.
+            // When DV conversion is active (DvMatroskaExtractor), keep it — DV color
+            // correctness takes priority over libass ASS/SSA rendering for MKV.
+            // ASS subtitles will still render via the fallback text renderer.
+            if (extractor is MatroskaExtractor) {
                 extractors[index] = AssMatroskaExtractor(subtitleParserFactory, assHandler)
             }
         }

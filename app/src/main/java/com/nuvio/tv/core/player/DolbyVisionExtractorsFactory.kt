@@ -139,9 +139,10 @@ internal data class DolbyVisionConversionConfig(
 
     /**
      * DV5 via the toggle is signal-only (codec rewritten to 8.1, profile-5 RPU kept). A
-     * libdovi RPU rewrite runs only when a mode is forced in Advanced. DV7 always converts.
+     * libdovi RPU rewrite runs only when a mode is forced in Advanced, OR when the user
+     * explicitly chose Convert to DV8.1 with DV5 enabled. DV7 always converts.
      */
-    val convertDv5Rpu: Boolean get() = forcedMode in 0..4
+    val convertDv5Rpu: Boolean get() = forcedMode in 0..4 || (dv5Enabled && manualDv81)
 
     /** True when a track of [profile] should be converted. */
     fun shouldConvert(profile: Int?): Boolean {
